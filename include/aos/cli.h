@@ -6,9 +6,13 @@
 #define AOS_CLI_H
 
 #define MAX_COMMANDS 64
-#define INBUF_SIZE   128
+#define INBUF_SIZE   256
 #define OUTBUF_SIZE  2048
 #define HIS_SIZE     5
+
+#define CLI_MAX_ARG_NUM    16
+#define CLI_MAX_ONCECMD_NUM    6
+
 
 #ifndef FUNCPTR
 typedef void (*FUNCPTR)(void);
@@ -130,26 +134,27 @@ int aos_cli_stop(void);
 const char *aos_cli_get_tag(void);
 
 #else /* CONFIG_AOS_CLI */
+#include "k_types.h"
 
 #define cmd_printf(...) do {} while(0)
 
-static inline int aos_cli_register_command(const struct cli_command *command)
+RHINO_INLINE int aos_cli_register_command(const struct cli_command *command)
 {
     return 0;
 }
 
-static inline int aos_cli_unregister_command(const struct cli_command *command)
+RHINO_INLINE int aos_cli_unregister_command(const struct cli_command *command)
 {
     return 0;
 }
 
-static inline int aos_cli_register_commands(const struct cli_command *commands,
+RHINO_INLINE int aos_cli_register_commands(const struct cli_command *commands,
                                             int num_commands)
 {
     return 0;
 }
 
-static inline int aos_cli_unregister_commands(const struct cli_command *commands,
+RHINO_INLINE int aos_cli_unregister_commands(const struct cli_command *commands,
                                               int num_commands)
 {
     return 0;
@@ -157,12 +162,12 @@ static inline int aos_cli_unregister_commands(const struct cli_command *commands
 
 #define aos_cli_printf csp_printf
 
-static inline int aos_cli_init(void)
+RHINO_INLINE int aos_cli_init(void)
 {
     return 0;
 }
 
-static inline int aos_cli_stop(void)
+RHINO_INLINE int aos_cli_stop(void)
 {
     return 0;
 }

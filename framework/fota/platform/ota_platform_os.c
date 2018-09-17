@@ -36,14 +36,14 @@ void *ota_mutex_init(void)
     return mutex;
 }
 
-void ota_mutex_lock(void *mutex)
+int ota_mutex_lock(void *mutex)
 {
-    aos_mutex_lock((aos_mutex_t *)mutex, AOS_WAIT_FOREVER);
+    return aos_mutex_lock((aos_mutex_t *)mutex, AOS_WAIT_FOREVER);
 }
 
-void ota_mutex_unlock(void *mutex)
+int ota_mutex_unlock(void *mutex)
 {
-    aos_mutex_unlock((aos_mutex_t *)mutex);
+    return aos_mutex_unlock((aos_mutex_t *)mutex);
 }
 
 void ota_mutex_destroy(void *mutex)
@@ -68,13 +68,9 @@ void *ota_semaphore_init(void)
     return sem;
 }
 
-int8_t ota_semaphore_wait( void *sem, uint32_t timeout_ms)
+int ota_semaphore_wait( void *sem, int32_t timeout_ms)
 {
-    if (-1 == timeout_ms) {
-        return aos_sem_wait((aos_sem_t *)sem, -1);
-    } else {
-        return aos_sem_wait((aos_sem_t *)sem, timeout_ms);
-    }
+    return aos_sem_wait((aos_sem_t *)sem, timeout_ms);
 }
 
 void ota_semaphore_post(void *sem)

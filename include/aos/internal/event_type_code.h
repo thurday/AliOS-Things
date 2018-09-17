@@ -145,5 +145,8 @@
 #define CODE_AT_IF_READY                1
 #define CODE_AT_IF_DISAPPEAR            2
 
+/** AT */
+#define EV_BLE                          0x020E
+#define CODE_BLE_TX_COMPLETED       1
 #endif /* AOS_EVENT_TYPE_CODE_API_H */
 

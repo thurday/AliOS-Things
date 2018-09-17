@@ -5,9 +5,12 @@
 #ifndef HAL_SPI_H
 #define HAL_SPI_H
 
+#define HAL_SPI_MODE_MASTER 1  /* spi communication is master mode */
+#define HAL_SPI_MODE_SLAVE  2  /* spi communication is slave mode */
+
 typedef struct {
-    uint32_t mode;
-    uint32_t freq;
+    uint32_t mode;        /* spi communication mode */
+    uint32_t freq;        /* communication frequency Hz */
 } spi_config_t;
 
 typedef struct {
@@ -31,7 +34,8 @@ int32_t hal_spi_init(spi_dev_t *spi);
  * @param[in]  spi      the spi device
  * @param[in]  data     spi send data
  * @param[in]  size     spi send data size
- * @param[in]  timeout  timeout in ms
+ * @param[in]  timeout  timeout in milisecond, set this value to HAL_WAIT_FOREVER
+ *                      if you want to wait forever
  *
  * @return  0 : on success, EIO : if the SPI device could not be initialised
  */
@@ -43,7 +47,8 @@ int32_t hal_spi_send(spi_dev_t *spi, const uint8_t *data, uint16_t size, uint32_
  * @param[in]   spi      the spi device
  * @param[out]  data     spi recv data
  * @param[in]   size     spi recv data size
- * @param[in]   timeout  timeout in ms
+ * @param[in]  timeout   timeout in milisecond, set this value to HAL_WAIT_FOREVER
+ *                       if you want to wait forever
  *
  * @return  0 : on success, EIO : if the SPI device could not be initialised
  */
@@ -55,14 +60,14 @@ int32_t hal_spi_recv(spi_dev_t *spi, uint8_t *data, uint16_t size, uint32_t time
  * @param[in]  spi      the spi device
  * @param[in]  tx_data  spi send data
  * @param[in]  rx_data  spi recv data
- * @param[in]  tx_size  spi data to be sent
- * @param[in]  rx_size  spi data to be recv
- * @param[in]  timeout  timeout in ms
+ * @param[in]  size     spi data to be sent and recived
+ * @param[in]  timeout  timeout in milisecond, set this value to HAL_WAIT_FOREVER
+ *                      if you want to wait forever
  *
  * @return  0, on success;  EIO : if the SPI device could not be initialised
  */
-int32_t hal_spi_send_recv(spi_dev_t *spi, uint8_t *tx_data, uint16_t tx_size,
-                          uint8_t *rx_data, uint16_t rx_size, uint32_t timeout);
+int32_t hal_spi_send_recv(spi_dev_t *spi, uint8_t *tx_data, uint8_t *rx_data,
+                          uint16_t size, uint32_t timeout);
 
 /**
  * De-initialises a SPI interface

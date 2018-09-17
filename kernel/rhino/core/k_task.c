@@ -12,6 +12,7 @@ static kstat_t task_create(ktask_t *task, const name_t *name, void *arg,
     CPSR_ALLOC();
 
     cpu_stack_t *tmp;
+    uint8_t      i = 0;
 
     NULL_PARA_CHK(task);
     NULL_PARA_CHK(name);
@@ -75,6 +76,7 @@ static kstat_t task_create(ktask_t *task, const name_t *name, void *arg,
     task->mm_alloc_flag = mm_alloc_flag;
     task->cpu_num       = cpu_num;
     cpu_binded          = cpu_binded;
+    i                   = i;
 
 #if (RHINO_CONFIG_CPU_NUM > 1)
     task->cpu_binded    = cpu_binded;
@@ -83,10 +85,14 @@ static kstat_t task_create(ktask_t *task, const name_t *name, void *arg,
 #if (RHINO_CONFIG_TASK_STACK_OVF_CHECK > 0)
 #if (RHINO_CONFIG_CPU_STACK_DOWN > 0)
     tmp  = task->task_stack_base;
-    *tmp = RHINO_TASK_STACK_OVF_MAGIC;
+    for (i = 0; i < RHINO_CONFIG_STK_CHK_WORDS; i++) {
+        *tmp++ = RHINO_TASK_STACK_OVF_MAGIC;
+    }
 #else
-    tmp  = (cpu_stack_t *)(task->task_stack_base) + task->stack_size - 1u;
-    *tmp = RHINO_TASK_STACK_OVF_MAGIC;
+    tmp  = (cpu_stack_t *)(task->task_stack_base) + task->stack_size - RHINO_CONFIG_STK_CHK_WORDS;
+    for (i = 0; i < RHINO_CONFIG_STK_CHK_WORDS; i++) {
+        *tmp++ = RHINO_TASK_STACK_OVF_MAGIC;
+    }
 #endif
 #endif
 
@@ -133,6 +139,43 @@ kstat_t krhino_task_cpu_create(ktask_t *task, const name_t *name, void *arg,
 {
     return task_create(task, name, arg, prio, ticks, stack_buf, stack_size, entry,
                        autorun, K_OBJ_STATIC_ALLOC, cpu_num, 1);
+}
+
+kstat_t krhino_task_cpu_bind(ktask_t *task, uint8_t cpu_num)
+{
+    CPSR_ALLOC();
+
+    ktask_t *task_cur;
+
+    RHINO_CRITICAL_ENTER();
+    task_cur = g_active_task[cpu_cur_get()];
+    if (task != task_cur) {
+        RHINO_CRITICAL_EXIT();
+        return RHINO_INV_PARAM;
+    }
+    task->cpu_num    = cpu_num;
+    task->cpu_binded = 1u;
+    RHINO_CRITICAL_EXIT_SCHED();
+
+    return RHINO_SUCCESS;
+}
+
+kstat_t krhino_task_cpu_unbind(ktask_t *task)
+{
+    CPSR_ALLOC();
+
+    ktask_t *task_cur;
+
+    RHINO_CRITICAL_ENTER();
+    task_cur = g_active_task[cpu_cur_get()];
+    if (task != task_cur) {
+        RHINO_CRITICAL_EXIT();
+        return RHINO_INV_PARAM;
+    }
+    task->cpu_binded = 0u;
+    RHINO_CRITICAL_EXIT_SCHED();
+
+    return RHINO_SUCCESS;
 }
 #endif
 
@@ -183,6 +226,14 @@ kstat_t krhino_task_dyn_create(ktask_t **task, const name_t *name, void *arg,
     return task_dyn_create(task, name, arg, pri, ticks, stack, entry, 0, 0, autorun);
 }
 
+#if (RHINO_CONFIG_CPU_NUM > 1)
+kstat_t krhino_task_cpu_dyn_create(ktask_t **task, const name_t *name, void *arg,
+                                   uint8_t pri, tick_t ticks, size_t stack,
+                                   task_entry_t entry, uint8_t cpu_num, uint8_t autorun)
+{
+    return task_dyn_create(task, name, arg, pri, ticks, stack, entry, cpu_num, 1, autorun);
+}
+#endif
 #endif
 
 kstat_t krhino_task_sleep(tick_t ticks)
@@ -210,14 +261,7 @@ kstat_t krhino_task_sleep(tick_t ticks)
     }
 
     g_active_task[cur_cpu_num]->task_state = K_SLEEP;
-
-#if (RHINO_CONFIG_DYNTICKLESS > 0)
-    g_elapsed_ticks = soc_elapsed_ticks_get();
-    tick_list_insert(g_active_task[cur_cpu_num], ticks + g_elapsed_ticks);
-#else
     tick_list_insert(g_active_task[cur_cpu_num], ticks);
-#endif
-
     ready_list_rm(&g_ready_queue, g_active_task[cur_cpu_num]);
 
     TRACE_TASK_SLEEP(g_active_task[cur_cpu_num], ticks);
@@ -407,12 +451,13 @@ kstat_t krhino_task_stack_min_free(ktask_t *task, size_t *free)
     }
 
 #if (RHINO_CONFIG_CPU_STACK_DOWN > 0)
-    task_stack = task->task_stack_base + 1u;
+    task_stack = task->task_stack_base + RHINO_CONFIG_STK_CHK_WORDS;
     while (*task_stack++ == 0u) {
         free_stk++;
     }
 #else
-    task_stack = (cpu_stack_t *)(task->task_stack_base) + task->stack_size - 2u;
+    task_stack = (cpu_stack_t *)(task->task_stack_base) + task->stack_size
+                 -  RHINO_CONFIG_STK_CHK_WORDS - 1u;
     while (*task_stack-- == 0u) {
         free_stk++;
     }
@@ -695,6 +740,7 @@ kstat_t krhino_task_del(ktask_t *task)
     }
 
     if (task->prio == RHINO_IDLE_PRI) {
+        RHINO_CRITICAL_EXIT();
         return RHINO_TASK_DEL_NOT_ALLOWED;
     }
 
@@ -756,9 +802,10 @@ kstat_t krhino_task_del(ktask_t *task)
 
 #if (RHINO_CONFIG_USER_HOOK > 0)
 #if (RHINO_CONFIG_CPU_STACK_DOWN > 0)
-    res_free = (res_free_t *)(task->task_stack_base + 1u);
+    res_free = (res_free_t *)(task->task_stack_base + RHINO_CONFIG_STK_CHK_WORDS);
 #else
-    (res_free_t *) = (res_free_t *)(task->task_stack_base + task->stack_size - 2u);
+    res_free = (res_free_t *)(task->task_stack_base + task->stack_size -
+                              (sizeof(res_free_t) / sizeof(cpu_stack_t)) - RHINO_CONFIG_STK_CHK_WORDS);
 #endif
     res_free->cnt = 0;
     krhino_task_del_hook(task, res_free);
@@ -822,9 +869,10 @@ kstat_t krhino_task_dyn_del(ktask_t *task)
     }
 
 #if (RHINO_CONFIG_CPU_STACK_DOWN > 0)
-    res_free  = (res_free_t *)(task->task_stack_base + 1u);
+    res_free = (res_free_t *)(task->task_stack_base + RHINO_CONFIG_STK_CHK_WORDS);
 #else
-    res_free = (res_free_t *)(task->task_stack_base + task->stack_size - 2u);
+    res_free = (res_free_t *)(task->task_stack_base + task->stack_size -
+                              (sizeof(res_free_t) / sizeof(cpu_stack_t)) - RHINO_CONFIG_STK_CHK_WORDS);
 #endif
     res_free->cnt = 0;
     g_sched_lock[cpu_cur_get()]++;

@@ -1,25 +1,7 @@
-/**
- ******************************************************************************
- * @file    platform_flash.c
- * @author  William Xu
- * @version V1.0.0
- * @date    05-May-2014
- * @brief   This file provides flash operation functions.
- ******************************************************************************
- *  UNPUBLISHED PROPRIETARY SOURCE CODE
- *  Copyright (c) 2016 MXCHIP Inc.
- *
- *  The contents of this file may not be disclosed to third parties, copied or
- *  duplicated in any form, in whole or in part, without the prior written
- *  permission of MXCHIP Corporation.
- ******************************************************************************
- */
 
 /* Includes ------------------------------------------------------------------*/
 #include "platform_logging.h"
 #include "platform_peripheral.h"
-#include "platform.h"
-#include "platform_config.h"
 #include "stdio.h"
 
 #ifdef USE_MICO_SPI_FLASH

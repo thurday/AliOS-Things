@@ -22,71 +22,65 @@ static uint8_t mm_break_case1(void)
 
 #if (K_MM_STATISTIC > 0)
 
-    VGF(VALGRIND_MAKE_MEM_DEFINED(pmmhead, sizeof(k_mm_head)));
     oldsize = pmmhead->used_size;
     ptr = k_mm_alloc(pmmhead, 8);
     MYASSERT(ptr != NULL);
 
-    VGF(VALGRIND_MAKE_MEM_DEFINED(pmmhead, sizeof(k_mm_head)));
-    MYASSERT((pmmhead->used_size - oldsize ) == DEF_FIX_BLK_SIZE);
+    MYASSERT((pmmhead->used_size - oldsize ) == RHINO_CONFIG_MM_BLK_SIZE);
 
     k_mm_free(pmmhead, ptr);
 
-    VGF(VALGRIND_MAKE_MEM_DEFINED(pmmhead, sizeof(k_mm_head)));
     oldsize = pmmhead->used_size;
     ptr = k_mm_alloc(pmmhead, 32);
     MYASSERT(ptr != NULL);
-    VGF(VALGRIND_MAKE_MEM_DEFINED(pmmhead, sizeof(k_mm_head)));
-    MYASSERT((pmmhead->used_size - oldsize ) == DEF_FIX_BLK_SIZE);
+    MYASSERT((pmmhead->used_size - oldsize ) == RHINO_CONFIG_MM_BLK_SIZE);
     k_mm_free(pmmhead, ptr);
 
-    VGF(VALGRIND_MAKE_MEM_DEFINED(pmmhead, sizeof(k_mm_head)));
     oldsize = pmmhead->used_size;
-    ptr = k_mm_alloc(pmmhead, DEF_FIX_BLK_SIZE + 1);
+    ptr = k_mm_alloc(pmmhead, RHINO_CONFIG_MM_BLK_SIZE + 1);
 
-    VGF(VALGRIND_MAKE_MEM_DEFINED(pmmhead, sizeof(k_mm_head)));
     MYASSERT(ptr != NULL);
-    MYASSERT((pmmhead->used_size - oldsize ) == (DEF_FIX_BLK_SIZE + 4 +
-                                                 MMLIST_HEAD_SIZE));
+    MYASSERT((pmmhead->used_size - oldsize ) == 
+      (RHINO_CONFIG_MM_BLK_SIZE + MM_ALIGN_SIZE + MMLIST_HEAD_SIZE));
     k_mm_free(pmmhead, ptr);
 #endif
 
 
-    ptr = k_mm_alloc(pmmhead, DEF_FIX_BLK_SIZE / 2);
+    ptr = k_mm_alloc(pmmhead, RHINO_CONFIG_MM_BLK_SIZE / 2);
     MYASSERT(ptr != NULL);
 
-    newptr = k_mm_realloc(pmmhead, ptr, DEF_FIX_BLK_SIZE / 2 + 1 );
+    newptr = k_mm_realloc(pmmhead, ptr, RHINO_CONFIG_MM_BLK_SIZE / 2 + 1 );
     MYASSERT(newptr == ptr);
 
-    newptr = k_mm_realloc(pmmhead, ptr, DEF_FIX_BLK_SIZE - 1);
+    newptr = k_mm_realloc(pmmhead, ptr, RHINO_CONFIG_MM_BLK_SIZE - 1);
     MYASSERT(newptr == ptr);
 
     ptr = newptr;
-    newptr = k_mm_realloc(pmmhead, ptr, DEF_FIX_BLK_SIZE + 1);
+    newptr = k_mm_realloc(pmmhead, ptr, RHINO_CONFIG_MM_BLK_SIZE + 1);
     MYASSERT(newptr != ptr);
 
     ptr = newptr;
-    newptr = k_mm_realloc(pmmhead, ptr, DEF_FIX_BLK_SIZE + 2);
+    newptr = k_mm_realloc(pmmhead, ptr, RHINO_CONFIG_MM_BLK_SIZE + 2);
     MYASSERT(newptr == ptr);
 
     ptr = newptr;
-    newptr = k_mm_realloc(pmmhead, ptr, DEF_FIX_BLK_SIZE * 4);
+    newptr = k_mm_realloc(pmmhead, ptr, RHINO_CONFIG_MM_BLK_SIZE * 4);
     MYASSERT(newptr == ptr);
 
     ptr = newptr;
-    newptr = k_mm_realloc(pmmhead, ptr, DEF_FIX_BLK_SIZE * 3);
+    newptr = k_mm_realloc(pmmhead, ptr, RHINO_CONFIG_MM_BLK_SIZE * 3);
     MYASSERT(newptr == ptr);
 
     newptr = k_mm_realloc(pmmhead, ptr, 0);
     MYASSERT(newptr == NULL);
 
-    ptr =  k_mm_realloc(pmmhead, NULL, DEF_FIX_BLK_SIZE * 3);
+    ptr =  k_mm_realloc(pmmhead, NULL, RHINO_CONFIG_MM_BLK_SIZE * 3);
     MYASSERT(ptr != NULL);
 
     k_mm_free(pmmhead, ptr);
 
     for (i = 0; i < 10; i++) {
-        ptrarray[i] =  k_mm_alloc(pmmhead, (i + 1) * 32);
+        ptrarray[i] =  k_mm_alloc(pmmhead, (i + 1) * 2);
         MYASSERT(ptrarray[i]);
     }
 
@@ -98,7 +92,7 @@ static uint8_t mm_break_case1(void)
 
     for (i = 0; i < 10; i++) {
         if (i % 2 != 0) {
-            ptrarray[i] = k_mm_realloc(pmmhead, ptrarray[i], (i + 1) * 96);
+            ptrarray[i] = k_mm_realloc(pmmhead, ptrarray[i], (i + 1) * 3);
         }
         MYASSERT(ptrarray[i]);
     }

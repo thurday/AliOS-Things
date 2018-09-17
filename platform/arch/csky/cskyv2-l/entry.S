@@ -15,60 +15,15 @@
  */
 
 #include <k_config.h>
-#include <config.h>
+#include <csi_config.h>
 
-.global trap
 .global watchpoint_handler
 
+.import decode_irq
 .import g_top_irqstack
 .import csky_get_tee_caller_task
 .import csky_deal_tee_caller_task
 .import g_irqvector
-
-/******************************************************************************
- * Functions:
- *     void trap(void);
- * default exception handler
- ******************************************************************************/
-
-    .global trap
-    .type   trap, %function
-trap:
-#ifdef CONFIG_STACK_GUARD
-    /*FIXME:the cr<14, 1> is used temporarily*/
-    mtcr    r1, cr<14, 1>
-
-    mfcr    r1, cr<0, 4>
-    bclri   r1, 0
-    mtcr    r1, cr<0, 4>
-
-    mfcr    r1, cr<14, 1>
-#endif
-
-    psrset  ee
-
-    mov     r0, r0
-    subi    sp, 72
-    stm     r0-r13, (sp)
-    mov     r0, sp
-    addi    r0, 72
-    stw     r0, (sp, 56)
-    stw     r15, (sp, 60)
-    mfcr    r0, epsr
-    stw     r0, (sp, 64)
-    mfcr    r0, epc
-    stw     r0, (sp, 68)
-
-    mov     r0, sp
-
-    /* for backtrace */
-    subi    sp, 8
-    stw     r8, (sp, 0)
-    stw     r15, (sp, 4)
-    mov     r8, sp
-
-    lrw     r1, trap_c
-    jmp     r1
 
 /******************************************************************************
  * Functions:
@@ -159,25 +114,28 @@ NOVIC_IRQ_Default_Handler:
     jbsr    csky_get_tee_caller_task
 #endif
 
-    jbsr    krhino_intrpt_enter
-
     lrw     r1, g_irqvector
     mfcr    r0, psr
     lsri    r0, 16
     sextb   r0
+    cmphsi  r0, 11
+    bt      .Lautovector
+    jbsr    decode_irq
+    br      .Lreturn
+.Lautovector:
     subi    r0, 32
     lsli    r0, 2
     add     r1, r0
-    ldw     r1, (r1)
+    ldw     r5, (r1)
     lsri    r0, 2
     mov     r4, r0
-   // jbsr    krhino_intrpt_enter_hook
+    jbsr    krhino_intrpt_enter_hook
     mov     r0, r4
-    jsr     r1
+    jsr     r5
     mov     r0, r4
-   // jbsr    krhino_intrpt_exit_hook
+    jbsr    krhino_intrpt_exit_hook
 
-    jbsr    krhino_intrpt_exit
+.Lreturn:
 
 #ifdef CONFIG_SUPPORT_REE_SCHEDULE_IN_TEE
     jbsr    csky_deal_tee_caller_task
@@ -198,9 +156,6 @@ NOVIC_IRQ_Default_Handler:
     mtcr    r3, cr<0, 4>
 #endif
 
-    movi    r2, 0
-    stw     r2, (r0)
-
     ldw     r0, (sp, 64)
     mtcr    r0, epc
     ldw     r0, (sp, 60)
@@ -214,3 +169,9 @@ NOVIC_IRQ_Default_Handler:
     bkpt
 #endif /* CONFIG_HAVE_VIC */
 
+    .align  1
+    .weak   decode_irq
+    .type   decode_irq, %function
+decode_irq:
+    rts
+    .size   decode_irq, . - decode_irq

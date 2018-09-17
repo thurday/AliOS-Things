@@ -1,33 +1,3 @@
-/**
-******************************************************************************
-* @file    crt0_IAR.h 
-* @author  William Xu
-* @version V1.0.0
-* @date    16-Sep-2014
-* @brief   __low_level_init called by IAR before main.
-******************************************************************************
-*
-*  The MIT License
-*  Copyright (c) 2014 MXCHIP Inc.
-*
-*  Permission is hereby granted, free of charge, to any person obtaining a copy 
-*  of this software and associated documentation files (the "Software"), to deal
-*  in the Software without restriction, including without limitation the rights 
-*  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-*  copies of the Software, and to permit persons to whom the Software is furnished
-*  to do so, subject to the following conditions:
-*
-*  The above copyright notice and this permission notice shall be included in
-*  all copies or substantial portions of the Software.
-*
-*  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
-*  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-*  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-*  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
-*  WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR 
-*  IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-******************************************************************************
-*/
 
 #include "gpio.h"
 #include "uart.h"
@@ -71,6 +41,22 @@ void fuart_send(const uint8_t *buf, uint32_t size )
 	FuartSend((uint8_t *)buf, size);
 }
 
+static kinit_t kinit = {
+    .argc = 0,
+    .argv = NULL,
+    .cli_enable = 1
+};
+
+void trace_start(void)
+{
+    printf("trace config close!!!\r\n");
+}
+
+static void sys_init(void)
+{
+    aos_kernel_init(&kinit);
+}
+
 int main( void )
 {
 	/* Setup the interrupt vectors address */
@@ -98,10 +84,12 @@ int main( void )
 	printf("Hello world\r\n");
 	printf("Built at %s, %s\r\n",__DATE__,__TIME__);
 
+	platform_flash_init();
+
 	SysTick_Config(MCU_CLOCK_HZ/1000);
 	
 	aos_init();
-	krhino_task_dyn_create(&g_aos_init, "aos app", 0, AOS_DEFAULT_APP_PRI, 0, 512, (task_entry_t)application_start, 1);
+	krhino_task_dyn_create(&g_aos_init, "aos-init", 0, AOS_DEFAULT_APP_PRI, 0, 2048, sys_init, 1);
 	aos_start();
 
 	/* Should never get here, unless there is an error in vTaskStartScheduler */

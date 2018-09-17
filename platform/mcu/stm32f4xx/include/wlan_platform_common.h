@@ -1,12 +1,3 @@
-/**
- *  UNPUBLISHED PROPRIETARY SOURCE CODE
- *  Copyright (c) 2016 MXCHIP Inc.
- *
- *  The contents of this file may not be disclosed to third parties, copied or
- *  duplicated in any form, in whole or in part, without the prior written
- *  permission of MXCHIP Corporation.
- *
- */
 
 /** @file
  *  This file provide wlan IO pin define
@@ -15,7 +6,6 @@
 #pragma once
 
 #include "platform_peripheral.h"
-#include "platform_config.h"
 
 #ifdef __cplusplus
 extern "C" {

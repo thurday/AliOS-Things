@@ -35,10 +35,9 @@ typedef struct {
     uint8_t *end;
     uint8_t *head;
     uint8_t *tail;
-    size_t    freesize;
-    size_t    type:         1;
-size_t    blk_size:
-    (8 * sizeof(size_t) - 1);
+    size_t   freesize;
+    size_t   type;
+    size_t   blk_size;
 } k_ringbuf_t;
 
 #define COMPRESS_LEN(x) ((x) <= RINGBUF_LEN_1BYTE_MAXVALUE ? 1: (x) <= RINGBUF_LEN_2BYTES_MAXVALUE ? 2: \
@@ -73,15 +72,6 @@ kstat_t krhino_ringbuf_reset(k_ringbuf_t *p_ringbuf);
  * @return  the operation status, RHINO_SUCCESS is OK, others is error
  */
 kstat_t krhino_ringbuf_push(k_ringbuf_t *p_ringbuf, void *data, size_t len);
-
-/**
- * This function will push the data to ring buffer head.
- * @param[in]  p_ringbuf   pointer to ring buffer
- * @param[in]  data        pointer to data
- * @param[in]  len         length of data
- * @return  the operation status, RHINO_SUCCESS is OK, others is error
- */
-kstat_t krhino_ringbuf_head_push(k_ringbuf_t *p_ringbuf, void *data, size_t len);
 
 /**
  * This function will pop the data from ring buffer head.

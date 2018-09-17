@@ -45,8 +45,12 @@ static int wifi_start_adv(hal_wifi_module_t *m, hal_wifi_init_type_adv_t *init_p
 static int get_ip_stat(hal_wifi_module_t *m, hal_wifi_ip_stat_t *out_net_para, hal_wifi_type_t wifi_type)
 {
     int ret;
+    char *zero_addr = "0.0.0.0";
 
-	ret = bk_wlan_get_ip_status(out_net_para, wifi_type);
+    ret = bk_wlan_get_ip_status(out_net_para, wifi_type);
+
+    if ((out_net_para->dns)[0] == 0)
+        memcpy(out_net_para->dns, zero_addr, strlen(zero_addr) + 1);
 
     return ret;
 }
@@ -158,12 +162,6 @@ void WifiStatusHandler(int status)
 
 void ApListCallback(hal_wifi_scan_result_t *pApList)
 {
-	int i;
-	
-	printf("AP %d: \r\n", pApList->ap_num);
-	for(i=0; i<pApList->ap_num; i++) {
-		printf("\t %s rssi %d\r\n", pApList->ap_list[i].ssid, pApList->ap_list[i].ap_power);
-	}
 	if (sim_aos_wifi_beken.ev_cb == NULL)
 		return;
 	if (sim_aos_wifi_beken.ev_cb->scan_compeleted == NULL)

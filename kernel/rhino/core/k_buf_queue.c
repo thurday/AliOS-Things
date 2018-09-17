@@ -7,7 +7,7 @@
 #if (RHINO_CONFIG_BUF_QUEUE > 0)
 
 static kstat_t buf_queue_create(kbuf_queue_t *queue, const name_t *name,
-                                void *buf, size_t size, size_t max_msg, uint8_t mm_alloc_flag)
+                                void *buf, size_t size, size_t max_msg, uint8_t mm_alloc_flag, size_t type)
 {
     CPSR_ALLOC();
 
@@ -32,20 +32,17 @@ static kstat_t buf_queue_create(kbuf_queue_t *queue, const name_t *name,
     queue->max_msg_size       = max_msg;
     queue->blk_obj.name       = name;
     queue->blk_obj.blk_policy = BLK_POLICY_PRI;
-#if (RHINO_CONFIG_KOBJ_SET > 0)
-    queue->blk_obj.handle = NULL;
-#endif
     queue->mm_alloc_flag      = mm_alloc_flag;
 
-    RHINO_CRITICAL_ENTER();
 #if (RHINO_CONFIG_SYSTEM_STATS > 0)
+    RHINO_CRITICAL_ENTER();
     klist_insert(&(g_kobj_list.buf_queue_head), &queue->buf_queue_item);
-#endif
     RHINO_CRITICAL_EXIT();
+#endif
 
     queue->blk_obj.obj_type = RHINO_BUF_QUEUE_OBJ_TYPE;
 
-    ringbuf_init(&(queue->ringbuf), buf, size, RINGBUF_TYPE_DYN, 0);
+    ringbuf_init(&(queue->ringbuf), buf, size, type, max_msg);
     queue->min_free_buf_size  = queue->ringbuf.freesize;
     TRACE_BUF_QUEUE_CREATE(krhino_cur_task_get(), queue);
 
@@ -53,10 +50,15 @@ static kstat_t buf_queue_create(kbuf_queue_t *queue, const name_t *name,
 }
 
 kstat_t krhino_buf_queue_create(kbuf_queue_t *queue, const name_t *name,
-                                void *buf,
-                                size_t size, size_t max_msg)
+                                void *buf, size_t size, size_t max_msg)
 {
-    return buf_queue_create(queue, name, buf, size, max_msg, K_OBJ_STATIC_ALLOC);
+    return buf_queue_create(queue, name, buf, size, max_msg, K_OBJ_STATIC_ALLOC, RINGBUF_TYPE_DYN);
+}
+
+kstat_t krhino_fix_buf_queue_create(kbuf_queue_t *queue, const name_t *name,
+                                   void *buf, size_t msg_size, size_t msg_num)
+{
+    return buf_queue_create(queue, name, buf, msg_size * msg_num, msg_size, K_OBJ_STATIC_ALLOC, RINGBUF_TYPE_FIX);
 }
 
 kstat_t krhino_buf_queue_del(kbuf_queue_t *queue)
@@ -129,7 +131,7 @@ kstat_t krhino_buf_queue_dyn_create(kbuf_queue_t **queue, const name_t *name,
     }
 
     stat = buf_queue_create(queue_obj, name, queue_obj->buf, size, max_msg,
-                            K_OBJ_DYN_ALLOC);
+                            K_OBJ_DYN_ALLOC, RINGBUF_TYPE_DYN);
 
     if (stat != RHINO_SUCCESS) {
         krhino_mm_free(queue_obj->buf);
@@ -185,8 +187,7 @@ kstat_t krhino_buf_queue_dyn_del(kbuf_queue_t *queue)
 }
 #endif
 
-static kstat_t buf_queue_send(kbuf_queue_t *queue, void *msg, size_t msg_size,
-                              int front)
+static kstat_t buf_queue_send(kbuf_queue_t *queue, void *msg, size_t msg_size)
 {
     CPSR_ALLOC();
 
@@ -226,21 +227,18 @@ static kstat_t buf_queue_send(kbuf_queue_t *queue, void *msg, size_t msg_size,
 
     /* buf queue is not full here, if there is no blocked receive task */
     if (is_klist_empty(head)) {
-        if (front) {
-            err = ringbuf_head_push(&(queue->ringbuf), msg, msg_size);
-        } else {
-            err = ringbuf_push(&(queue->ringbuf), msg, msg_size);
-        }
+
+        err = ringbuf_push(&(queue->ringbuf), msg, msg_size);
 
         if (err != RHINO_SUCCESS) {
             RHINO_CRITICAL_EXIT();
-            if (err ==  RHINO_RINGBUF_FULL) {
-                err = RHINO_BUF_QUEUE_FULL;
+            if (err == RHINO_RINGBUF_FULL) {
+                err =  RHINO_BUF_QUEUE_FULL;
             }
             return err;
         }
 
-        queue->cur_num ++;
+        queue->cur_num++;
 
         if (queue->peak_num  < queue->cur_num) {
             queue->peak_num  = queue->cur_num;
@@ -253,12 +251,6 @@ static kstat_t buf_queue_send(kbuf_queue_t *queue, void *msg, size_t msg_size,
         TRACE_BUF_QUEUE_POST(g_active_task[cur_cpu_num], queue, msg, msg_size);
 
         RHINO_CRITICAL_EXIT();
-
-#if (RHINO_CONFIG_KOBJ_SET > 0)
-        if (queue->blk_obj.handle != NULL) {
-            queue->blk_obj.handle->notify((blk_obj_t *)queue, queue->blk_obj.handle);
-        }
-#endif
         return RHINO_SUCCESS;
     }
 
@@ -280,15 +272,7 @@ kstat_t krhino_buf_queue_send(kbuf_queue_t *queue, void *msg, size_t size)
     NULL_PARA_CHK(queue);
     NULL_PARA_CHK(msg);
 
-    return buf_queue_send(queue, msg, size, RHINO_FALSE);
-}
-
-kstat_t krhino_buf_queue_send_front(kbuf_queue_t *queue, void *msg, size_t size)
-{
-    NULL_PARA_CHK(queue);
-    NULL_PARA_CHK(msg);
-
-    return buf_queue_send(queue, msg, size, RHINO_TRUE);
+    return buf_queue_send(queue, msg, size);
 }
 
 kstat_t krhino_buf_queue_recv(kbuf_queue_t *queue, tick_t ticks, void *msg,
@@ -411,17 +395,6 @@ kstat_t krhino_buf_queue_info_get(kbuf_queue_t *queue, kbuf_queue_info_t *info)
     info->peak_num = queue->peak_num;
 
     RHINO_CRITICAL_EXIT();
-
-    return RHINO_SUCCESS;
-}
-
-kstat_t krhino_buf_queue_is_valid(kbuf_queue_t *queue)
-{
-    NULL_PARA_CHK(queue);
-
-    if (queue->blk_obj.obj_type != RHINO_BUF_QUEUE_OBJ_TYPE) {
-        return RHINO_KOBJ_TYPE_ERR;
-    }
 
     return RHINO_SUCCESS;
 }

@@ -7,7 +7,15 @@ CURRENT_BUILD := TW
 include $(TOP)/tee.cfg
 include $(TOP)/Make.rules
 
-SRCS := $(wildcard *.c *.cxx)
+SRCS :=
+ifeq ($(PLATFORM), csky_phobos)
+SRCS += ./tee_asc_phobos.c
+else
+ifeq ($(PLATFORM), csky_ch2201)
+SRCS += ./tee_asc_ch2201.c
+endif
+endif
+
 OBJS := $(patsubst %.cxx,%.o,$(patsubst %.c,%.o,$(SRCS)))
 LIBS := built-in.o
 

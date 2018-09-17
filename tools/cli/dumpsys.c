@@ -21,11 +21,11 @@ extern uint32_t dump_mmleak(void);
 ktimer_t g_mm_leak_check_timer;
 
 #define safesprintf(buf,totallen,offset,string) do {\
-    if ((totallen - offset) < strlen(string)) { \
+    if ((totallen - offset) <= strlen(string)) { \
         csp_printf("%s",buf); \
         offset = 0; \
     } \
-    sprintf(buf+offset,"%s",string); \
+    snprintf(buf+offset,strlen(string)+1,"%s",string); \
     offset += strlen(string); \
     } while (0)
 
@@ -36,24 +36,27 @@ uint32_t dumpsys_task_func(char *buf, uint32_t len, int detail)
     kstat_t    rst;
     size_t     free_size   = 0;
     sys_time_t time_total  = 0;
-    char      *cpu_stat[9] = {"RDY", "PEND", "PEND_TO", "TO_SUS", "SUS",
-                              "PEND_SUS", "DLY", "DLY_SUS", "DELETED"
-                             };
-
+    /* consistent with "task_stat_t" */
+    char      *cpu_stat[] = {"ERROR", "RDY", "PEND", "SUS",
+                             "PEND_SUS", "SLP",
+                             "SLP_SUS", "DELETED"};
     klist_t *taskhead = &g_kobj_list.task_head;
     klist_t *taskend  = taskhead;
     klist_t *tmp;
     ktask_t *task;
+    
+#if (RHINO_CONFIG_CPU_NUM > 1)
+    ktask_t *candidate[RHINO_CONFIG_CPU_NUM];
+    size_t corenum;
+#else
     ktask_t *candidate;
-
+#endif
     char  yes = 'N';
-
-
-
     char *printbuf = NULL;
     char  tmpbuf[256] = {0};
     int   offset   = 0;
     int   totallen = 2048;
+    int   taskstate = 0;
 
     printbuf = aos_malloc(totallen);
     if (printbuf ==  NULL) {
@@ -62,8 +65,19 @@ uint32_t dumpsys_task_func(char *buf, uint32_t len, int detail)
     memset(printbuf, 0, totallen);
 
     krhino_sched_disable();
+    
+#if (RHINO_CONFIG_CPU_NUM > 1)
+    for(corenum = 0;corenum < RHINO_CONFIG_CPU_NUM;corenum ++)
+    {
+        preferred_cpu_ready_task_get(&g_ready_queue, corenum);
+        candidate[corenum] = g_preferred_ready_task[corenum];
+    }
+
+#else
     preferred_cpu_ready_task_get(&g_ready_queue, cpu_cur_get());
     candidate = g_preferred_ready_task[cpu_cur_get()];
+#endif
+    
 
     snprintf(tmpbuf, 255,
             "%s------------------------------------------------------------------------\r\n",
@@ -80,9 +94,17 @@ uint32_t dumpsys_task_func(char *buf, uint32_t len, int detail)
     safesprintf(printbuf, totallen, offset, tmpbuf);
 
 #endif
+
+#if (RHINO_CONFIG_CPU_NUM > 1)
+    snprintf(tmpbuf, 255,
+            "%sName               State    Prio StackSize MinFreesize Runtime Candidate cpu_binded cpu_num cur_exc\r\n",
+            esc_tag);
+#else
     snprintf(tmpbuf, 255,
             "%sName               State    Prio StackSize MinFreesize Runtime Candidate\r\n",
             esc_tag);
+#endif
+
     safesprintf(printbuf, totallen, offset, tmpbuf);
     snprintf(tmpbuf, 255,
             "%s------------------------------------------------------------------------\r\n",
@@ -108,16 +130,41 @@ uint32_t dumpsys_task_func(char *buf, uint32_t len, int detail)
             task_name = "anonym";
         }
 
-        if (candidate == task) {
+        
+#if (RHINO_CONFIG_CPU_NUM > 1)
+        for(corenum = 0;corenum < RHINO_CONFIG_CPU_NUM;corenum ++)
+        {
+            if (candidate[corenum] == task) 
+            {
+                yes = 'Y';
+            } else {
+                yes = 'N';
+            }
+        }
+        
+#else
+        if (candidate == task) 
+        {
             yes = 'Y';
         } else {
             yes = 'N';
         }
 
+#endif
+
+        taskstate = task->task_state >= sizeof(cpu_stat)/sizeof(cpu_stat[0]) ? 0 : task->task_state;
+
 #ifndef HAVE_NOT_ADVANCED_FORMATE
+        #if (RHINO_CONFIG_CPU_NUM > 1)
+        snprintf(tmpbuf, 255, "%s%-19.18s%-9s%-5d%-10d%-12zu%-9llu%-11c%-10d%-10d%-10d\r\n",
+                 esc_tag, task_name, cpu_stat[taskstate], task->prio,
+                 task->stack_size, free_size, (unsigned long long)time_total, yes,task->cpu_binded,task->cpu_num,task->cur_exc);
+        #else
         snprintf(tmpbuf, 255, "%s%-19.18s%-9s%-5d%-10d%-12zu%-9llu%-11c\r\n",
-                 esc_tag, task_name, cpu_stat[task->task_state - K_RDY], task->prio,
+                 esc_tag, task_name, cpu_stat[taskstate], task->prio,
                  task->stack_size, free_size, (unsigned long long)time_total, yes);
+        #endif
+
 #else
         char name_cut[19];
         /* if not support %-N.Ms,cut it manually */
@@ -126,10 +173,16 @@ uint32_t dumpsys_task_func(char *buf, uint32_t len, int detail)
             memcpy(name_cut, task->task_name, 18);
             task_name = name_cut;
         }
-
+        
+        #if (RHINO_CONFIG_CPU_NUM > 1)
+        snprintf(tmpbuf, 255, "%s%-19s%-9s%-5d%-10d%-12u%-9u%-11c%-10d%-10d%-10d\r\n",
+                 esc_tag, task_name, cpu_stat[taskstate], task->prio,
+                 task->stack_size, free_size, (unsigned int)time_total, yes,task->cpu_binded,task->cpu_num,task->cur_exc);
+        #else
         snprintf(tmpbuf, 255, "%s%-19s%-9s%-5d%-10d%-12u%-9u%-11c\r\n",
-                 esc_tag, task_name, cpu_stat[task->task_state - K_RDY], task->prio,
+                 esc_tag, task_name, cpu_stat[taskstate], task->prio,
                  task->stack_size, free_size, (unsigned int)time_total, yes);
+        #endif
 #endif
         safesprintf(printbuf, totallen, offset, tmpbuf);
 
@@ -205,7 +258,7 @@ uint32_t dumpsys_mm_leak_func(char *buf, uint32_t len)
 
 uint8_t mm_leak_timer_cb(void *timer, void *arg)
 {
-    dumpsys_mm_info_func(NULL, 0);
+    dumpsys_mm_info_func(0);
     return 0;
 }
 
@@ -281,7 +334,7 @@ uint32_t dumpsys_func(char *pcWriteBuffer, int xWriteBufferLen, int argc,
 
 #if (RHINO_CONFIG_MM_DEBUG> 0)
     else if (argc == 2 && 0 == strcmp(argv[1], "mm_info")) {
-        ret = dumpsys_mm_info_func(NULL, 0);
+        ret = dumpsys_mm_info_func(0);
         return ret;
     }
 #endif
@@ -397,5 +450,28 @@ int dump_task_stack_byname(char *taskname)
 
     return 0;
 }
+
+static void task_cmd(char *buf, int len, int argc, char **argv)
+{
+    dumpsys_task_func(NULL, 0, 1);
+}
+
+static void dumpsys_cmd(char *buf, int len, int argc, char **argv)
+{
+    dumpsys_func(buf, len, argc, argv);
+}
+
+struct cli_command  dumpsys_cli_cmd[] = {
+    { "tasklist", "list all thread info", task_cmd },
+    { "dumpsys", "dump system info", dumpsys_cmd },
+};
+
+
+void dumpsys_cli_init(void)
+{
+    aos_cli_register_commands(&dumpsys_cli_cmd[0],sizeof(dumpsys_cli_cmd) / sizeof(struct cli_command));
+}
+
+
 #endif
 

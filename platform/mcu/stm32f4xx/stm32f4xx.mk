@@ -1,12 +1,3 @@
-#
-#  UNPUBLISHED PROPRIETARY SOURCE CODE
-#  Copyright (c) 2016 MXCHIP Inc.
-#
-#  The contents of this file may not be disclosed to third parties, copied or
-#  duplicated in any form, in whole or in part, without the prior written
-#  permission of MXCHIP Corporation.
-#
-
 NAME = stm32f4xx
 
 # Host architecture is ARM Cortex M4
@@ -72,6 +63,22 @@ GLOBAL_CFLAGS += -mcpu=cortex-m4 \
 
 GLOBAL_CFLAGS += -w
 
+
+ifeq ($(COMPILER),armcc)
+GLOBAL_ASMFLAGS += --cpu=7E-M -g --apcs=interwork -D__MICROLIB -DSTM32F4xx
+else ifeq ($(COMPILER),iar)
+GLOBAL_ASMFLAGS += --cpu Cortex-M4 \
+                   --cpu_mode thumb \
+                   --endian little
+else
+GLOBAL_ASMFLAGS += -mcpu=cortex-m4 \
+                   -march=armv7-m  \
+                   -mlittle-endian \
+                   -mthumb -mthumb-interwork \
+                   -w
+endif
+
+
 GLOBAL_LDFLAGS += -mcpu=cortex-m4        \
                   -mthumb -mthumb-interwork \
                   -mlittle-endian \
@@ -94,10 +101,14 @@ $(NAME)_SOURCES := platform_init.c          \
                    aos/soc_impl.c                \
                    aos/trace_impl.c             \
                    aos/aos.c                    \
-                   hal/hw.c hal/uart.c hal/flash.c  
+                   hal/i2c.c                    \
+                   hal/hw.c \
+                   hal/uart.c \
+                   hal/flash.c \
+                   hal/ota_port.c 
 
 
-###      wifi/src/wifi.c hal/hw.c hal/wifi_port.c  hal/flash_port.c hal/ota_port.c   
+###      wifi/src/wifi.c hal/hw.c hal/wifi_port.c  hal/flash_port.c   
 
 GLOBAL_LDFLAGS  += -L ./platform/mcu/$(NAME)/$(TOOLCHAIN_NAME)
 
@@ -111,7 +122,6 @@ ifndef NO_WIFI
 $(NAME)_SOURCES += wlan_bus_driver/wlan_platform_common.c \
 				   wlan_bus_driver/wlan_platform.c \
                    wlan_bus_driver/wlan_bus_$(BUS).c
-$(NAME)_PREBUILT_LIBRARY := wifi/core/MiCO.$(MODULE).$(TOOLCHAIN_NAME).a
 else
 ifdef SHARED_WIFI_SPI_BUS
 $(NAME)_SOURCES += wlan_bus_driver/wlan_bus_SPI.c
@@ -152,3 +162,4 @@ GLOBAL_INCLUDES     +=
 endif # APP=spi_flash_write
 endif # APP=bootloader
 
+GLOBAL_DEFINES += CONFIG_ARM

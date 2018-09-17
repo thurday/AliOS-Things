@@ -4,7 +4,7 @@ NAME := esp32
 
 $(NAME)_TYPE := kernel 
 
-$(NAME)_COMPONENTS := framework.common modules.fs.kv cli
+$(NAME)_COMPONENTS := hal modules.fs.kv
 $(NAME)_COMPONENTS += protocols.net alicrypto
 
 ESP_INC_PATH    := bsp/include
@@ -20,7 +20,7 @@ GLOBAL_INCLUDES += $(ESP_INC_PATH)/spi_flash/include
 GLOBAL_INCLUDES += $(ESP_INC_PATH)/container/include
 GLOBAL_INCLUDES += $(ESP_INC_PATH)/app_update/include
 
-GLOBAL_CFLAGS   += -ffunction-sections -fdata-sections -fstrict-volatile-bitfields -mlongcalls
+GLOBAL_CFLAGS   += -ffunction-sections -fdata-sections -fstrict-volatile-bitfields -mlongcalls -DESPOS_FOR_ESP32
 GLOBAL_LDFLAGS   += -nostdlib -Lplatform/mcu/esp32/ -lc
 GLOBAL_LDFLAGS   += -lgcc -lstdc++ -lgcov -lm
 
@@ -40,9 +40,30 @@ $(NAME)_SOURCES  += hal/uart.c
 $(NAME)_SOURCES  += hal/flash.c
 $(NAME)_SOURCES  += hal/wifi_port.c
 $(NAME)_SOURCES  += hal/ota_port.c
+ifeq ($(ble),1)
+$(NAME)_SOURCES  += hal/ais_ota_port.c
+endif
 $(NAME)_SOURCES  += hal/misc.c
+$(NAME)_SOURCES  += hal/i2c.c
+$(NAME)_SOURCES  += hal/gpio.c
+$(NAME)_SOURCES  += hal/pwm.c
 $(NAME)_SOURCES  += bsp/tcpip_adapter_lwip.c bsp/wlanif.c bsp/ethernetif.c
 $(NAME)_CFLAGS   := -std=gnu99
+
+ifeq ($(bt_mesh), 1)
+$(NAME)_SOURCES  += hal/mesh_bt_hal.c
+endif
+
+
+ifeq ($(OS_MUTICORE_NUM), 2)
+GLOBAL_INCLUDES += $(ESP_INC_PATH)/app_update/include
+GLOBAL_INCLUDES += $(ESP_INC_PATH)/esp32/include/rom
+GLOBAL_INCLUDES += smp
+$(NAME)_SOURCES  += smp/smp_int.c
+$(NAME)_SOURCES  += smp/smp_load.c
+$(NAME)_SOURCES  += smp/smp_sync.c
+endif
+
 
 ifneq ($(wifi),0)
 $(NAME)_CFLAGS   += -DENABLE_WIFI
@@ -88,22 +109,42 @@ $(NAME)_PREBUILT_LIBRARY += lib/libespos.a
 $(NAME)_PREBUILT_LIBRARY += lib/libfreertos.a
 $(NAME)_PREBUILT_LIBRARY += lib/libheap.a
 else
-$(NAME)_COMPONENTS       += rhino platform/arch/xtensa
+$(NAME)_COMPONENTS       += rhino platform/arch/xtensa/lx6
 $(NAME)_SOURCES          += aos/hook_impl.c
 $(NAME)_SOURCES          += aos/soc_impl.c
 $(NAME)_SOURCES          += aos/trace_impl.c
 $(NAME)_SOURCES          += aos/heap_wrapper.c
 endif
 
+mesh ?= 0
 ifneq ($(mesh),0)
 $(NAME)_COMPONENTS += protocols.mesh
-$(NAME)_SOURCES  += hal/mesh.c
 endif
 
-ble := 0
+ble ?= 0
 ifneq ($(ble),0)
+$(NAME)_COMPONENTS += protocols.bluetooth
 GLOBAL_INCLUDES += $(ESP_INC_PATH)/bt/include
+$(NAME)_INCLUDES += ../../../kernel/protocols/bluetooth/port
+$(NAME)_INCLUDES += ../../../kernel/protocols/bluetooth/host
+$(NAME)_INCLUDES += ../../../kernel/protocols/bluetooth/host/bt_mesh
+$(NAME)_INCLUDES += ../../../kernel/protocols/bluetooth/core/include
+$(NAME)_INCLUDES += ../../../kernel/protocols/bluetooth/include/bluetooth
+ifneq ($(hci_h4),1)
+$(NAME)_SOURCES += ble_hci_driver/hci_driver.c
+else
+$(NAME)_COMPONENTS += bluetooth.nrf51822
+endif
 $(NAME)_PREBUILT_LIBRARY += lib/libbt.a
 $(NAME)_PREBUILT_LIBRARY += lib/libbtdm_app.a
-GLOBAL_DEFINES   += CONFIG_ESP32_WITH_BLE
+GLOBAL_DEFINES += CONFIG_ESP32_WITH_BLE
+GLOBAL_DEFINES += CONFIG_XTENSA
 endif
+
+$(NAME)_SOURCES  += hal/adc.c
+$(NAME)_SOURCES  += hal/dac.c
+$(NAME)_SOURCES  += hal/wdg.c
+
+$(NAME)_SOURCES  += hal/rtc.c
+
+

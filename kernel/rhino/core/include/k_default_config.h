@@ -5,6 +5,18 @@
 #ifndef K_DEFAULT_CONFIG_H
 #define K_DEFAULT_CONFIG_H
 
+#ifndef RHINO_CONFIG_CPU_PWR_MGMT
+#define RHINO_CONFIG_CPU_PWR_MGMT            0
+#endif
+
+#ifndef RHINO_CONFIG_CPU_PWR_MGMT
+#define RHINO_SCHED_NONE_PREEMPT             0
+#endif
+
+#ifndef RHINO_CONFIG_STK_CHK_WORDS
+#define RHINO_CONFIG_STK_CHK_WORDS           1u
+#endif
+
 /* chip level conf */
 #ifndef RHINO_CONFIG_LITTLE_ENDIAN
 #define RHINO_CONFIG_LITTLE_ENDIAN           1
@@ -40,7 +52,7 @@
 #endif
 
 #ifndef RHINO_CONFIG_WORKQUEUE_TASK_PRIO
-#define RHINO_CONFIG_WORKQUEUE_TASK_PRIO     9
+#define RHINO_CONFIG_WORKQUEUE_TASK_PRIO     20
 #endif
 
 #ifndef RHINO_CONFIG_EVENT_FLAG
@@ -57,6 +69,10 @@
 
 #ifndef RHINO_CONFIG_MM_BLK
 #define RHINO_CONFIG_MM_BLK                  1
+#endif
+
+#ifndef RHINO_CONFIG_MM_BLK_SIZE
+#define RHINO_CONFIG_MM_BLK_SIZE             32
 #endif
 
 #ifndef RHINO_CONFIG_MM_TLF
@@ -84,15 +100,11 @@
 #endif
 
 #ifndef K_MM_STATISTIC
-#define K_MM_STATISTIC                       0
+#define K_MM_STATISTIC                       1
 #endif
 
 #ifndef RHINO_CONFIG_TASK_SEM
 #define RHINO_CONFIG_TASK_SEM                0
-#endif
-
-#ifndef RHINO_CONFIG_KOBJ_SET
-#define RHINO_CONFIG_KOBJ_SET                0
 #endif
 
 /* kernel task conf */
@@ -150,16 +162,8 @@
 #define RHINO_CONFIG_HW_COUNT                0
 #endif
 
-#ifndef RHINO_CONFIG_DYNTICKLESS
-#define RHINO_CONFIG_DYNTICKLESS             0
-#endif
-
 #ifndef RHINO_CONFIG_TICKS_PER_SECOND
 #define RHINO_CONFIG_TICKS_PER_SECOND        100
-#endif
-
-#ifndef RHINO_CONFIG_NEXT_INTRPT_TICKS
-#define RHINO_CONFIG_NEXT_INTRPT_TICKS       100u
 #endif
 
 #ifndef RHINO_CONFIG_TIMER_TASK_STACK_SIZE
@@ -175,7 +179,7 @@
 #endif
 
 #ifndef RHINO_CONFIG_TIMER_MSG_NUM
-#define RHINO_CONFIG_TIMER_MSG_NUM           40
+#define RHINO_CONFIG_TIMER_MSG_NUM           20
 #endif
 
 /* kernel intrpt conf */
@@ -269,8 +273,8 @@
 #define RHINO_CONFIG_CPU_NUM                 1
 #endif
 
-#if ((RHINO_CONFIG_DYNTICKLESS >= 1) && (RHINO_CONFIG_SCHED_RR != 0))
-#error  "RHINO_CONFIG_SCHED_RR should be 0 when RHINO_CONFIG_DYNTICKLESS is enabled."
+#if ((RHINO_CONFIG_TIMER >= 1) && (RHINO_CONFIG_BUF_QUEUE == 0))
+#error  "RHINO_CONFIG_BUF_QUEUE should be 1 when RHINO_CONFIG_TIMER is enabled."
 #endif
 
 #if ((RHINO_CONFIG_MM_TLF >= 1) && (RHINO_CONFIG_MM_BLK == 0))

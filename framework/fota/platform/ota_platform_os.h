@@ -12,15 +12,15 @@ void ota_free(void *ptr);
 
 void *ota_mutex_init(void);
 
-void ota_mutex_lock(void *mutex);
+int ota_mutex_lock(void *mutex);
 
-void ota_mutex_unlock(void *mutex);
+int ota_mutex_unlock(void *mutex);
 
 void ota_mutex_destroy(void *mutex);
 
 void *ota_semaphore_init(void);
 
-int8_t ota_semaphore_wait(void *sem, uint32_t timeout_ms);
+int ota_semaphore_wait(void *sem, int32_t timeout_ms);
 
 void ota_semaphore_post(void *sem);
 

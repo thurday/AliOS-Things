@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include <aos/aos.h>
 #include <aos/network.h>
 #include <hal/hal.h>
@@ -37,16 +38,11 @@
 #define MAX_RETRY_CONNECT 120
 #define RETRY_INTERVAL_MS 500
 
-typedef struct {
-    char ssid[33];
-    char pwd[65];
-#ifdef STM32L475xx
-    char security[MAX_SECURITY_SIZE + 1];
-#endif
-} wifi_conf_t;
+#define HOTSPOT_AP "aha"
+#define ROUTER_AP "adha"
 
 typedef struct {
-    wifi_conf_t                saved_conf;
+    netmgr_ap_config_t         saved_conf;
     netmgr_ap_config_t         ap_config;
     hal_wifi_module_t          *wifi_hal_mod;
     autoconfig_plugin_t        *autoconfig_chain;
@@ -61,8 +57,10 @@ typedef struct {
 extern autoconfig_plugin_t g_alink_smartconfig;
 
 static netmgr_cxt_t        g_netmgr_cxt;
+#ifndef WITH_SAL
 #if !defined(CONFIG_YWSS) || defined(CSP_LINUXHOST)
 static autoconfig_plugin_t g_def_smartconfig;
+#endif
 #endif
 
 static bool g_station_is_up = false;
@@ -70,6 +68,10 @@ static bool g_station_is_up = false;
 static void netmgr_wifi_config_start(void);
 static void add_autoconfig_plugin(autoconfig_plugin_t *plugin);
 static int32_t has_valid_ap(void);
+
+#if defined(WITH_LWIP) || defined(WITH_VENDOR_LWIP)
+static void ramdonize_tcp_local_port();
+#endif
 
 static void format_ip(uint32_t ip, char *buf)
 {
@@ -137,25 +139,126 @@ static void netmgr_ip_got_event(hal_wifi_module_t *m,
 {
     LOGI(TAG, "Got ip : %s, gw : %s, mask : %s", pnet->ip, pnet->gate, pnet->mask);
 
+#if defined(WITH_LWIP) || defined(WITH_VENDOR_LWIP)
+    ramdonize_tcp_local_port();
+#endif
+
     g_netmgr_cxt.ipv4_owned = translate_addr(pnet->ip);
     g_netmgr_cxt.ip_available = true;
     aos_post_event(EV_WIFI, CODE_WIFI_ON_PRE_GOT_IP, 0u);
     start_mesh(true);
 }
 
+#if defined(WITH_LWIP) || defined(WITH_VENDOR_LWIP)
+#ifdef LOCAL_PORT_ENHANCED_RAND
+
+#define TCP_LOCAL_PORT_SEED "lport_seed"
+#define SEED_HISTORAY_MAX 10
+
+typedef struct {
+    unsigned int hist[SEED_HISTORAY_MAX];
+    int total_num;
+    int start_idx;
+} seed_history_t;
+
+static void ensure_different_seed(unsigned int *seed, seed_history_t *history)
+{
+    int i, idx = 0;
+
+    if (!history || !seed) {
+        return;
+    }
+
+    for (i = 0; i < history->total_num; i ++) {
+        idx = (i + history->start_idx) % SEED_HISTORAY_MAX;
+
+        if (history->hist[idx] == *seed) {
+            printf("Same seed found %d\r\n", history->hist[idx]);
+            *seed = *seed + (unsigned int)aos_now();
+        }
+    }
+}
+
+static void update_seed_history(seed_history_t *history, unsigned int new_seed)
+{
+    int idx = 0;
+
+    if (!history) {
+        return;
+    }
+
+    if (history->total_num >= SEED_HISTORAY_MAX) {
+        LOGD("netmgr", "History is full, let's replace the first entry.");
+        history->hist[history->start_idx] = new_seed;
+        history->start_idx++;
+        history->start_idx %= SEED_HISTORAY_MAX;
+    } else {
+        idx = (history->start_idx + history->total_num) % SEED_HISTORAY_MAX;
+        history->hist[idx] = new_seed;
+        history->total_num++;
+    }
+}
+
+static void dump_seed_history(seed_history_t *history)
+{
+#ifdef DEBUG
+    int i;
+
+    if (!history) {
+        return;
+    }
+
+    for (i = 0; i < history->total_num; i++) {
+        printf("%d ", history->hist[(history->start_idx + i) % SEED_HISTORAY_MAX]);
+    }
+
+    printf("\r\n");
+#endif
+}
+#endif /* LOCAL_PORT_ENHANCED_RAND */
+
+static void ramdonize_tcp_local_port()
+{
+    unsigned int ts = (unsigned int)aos_now();
+    static uint8_t rand_flag = 0;
+#ifdef LOCAL_PORT_ENHANCED_RAND
+    int ret, len;
+    seed_history_t seed_history;
+#endif
+
+    if (0 == rand_flag) { // Do the rand operation only once
+#ifdef LOCAL_PORT_ENHANCED_RAND
+        LOGD("netmgr", "The ts generated from system time is %d", ts);
+        len = sizeof(seed_history);
+        memset(&seed_history, 0, sizeof(seed_history));
+        ret = aos_kv_get(TCP_LOCAL_PORT_SEED, &seed_history, &len);
+        if (ret == 0) {
+            LOGD("netmgr", "Seed found in kv.");
+            dump_seed_history(&seed_history);
+            ensure_different_seed(&ts, &seed_history);
+        }
+#endif /* LOCAL_PORT_ENHANCED_RAND */
+        LOGD("netmgr", "The final seed to use is %d", ts);
+        srand(ts);
+        tcp_init();
+        udp_init();
+#ifdef LOCAL_PORT_ENHANCED_RAND
+        update_seed_history(&seed_history, ts);
+        LOGD("netmgr", "The new seed history to be saved:");
+        dump_seed_history(&seed_history);
+        ret = aos_kv_set(TCP_LOCAL_PORT_SEED, &seed_history,
+                         sizeof(seed_history), 1);
+#endif /* LOCAL_PORT_ENHANCED_RAND */
+        rand_flag = 1;
+    }
+}
+#endif /* LWIP */
+
 static void netmgr_stat_chg_event(hal_wifi_module_t *m, hal_wifi_event_t stat,
                                   void *arg)
 {
-#ifdef WITH_LWIP
-    long long ts = aos_now();
-#endif
     switch (stat) {
         case NOTIFY_STATION_UP:
-#ifdef WITH_LWIP
-            srand((unsigned int)ts);
-            tcp_init();
-            udp_init();
-#endif
             g_station_is_up = true;
             aos_post_event(EV_WIFI, CODE_WIFI_ON_CONNECTED,
                            (unsigned long)g_netmgr_cxt.ap_config.ssid);
@@ -241,37 +344,6 @@ static const hal_wifi_event_cb_t g_wifi_hal_event = {
     .fatal_err           = netmgr_fatal_err_event,
 };
 
-#ifdef STM32L475xx
-static void set_access_security(hal_wifi_init_type_t *wifi_type, char *security)
-{
-    if ( strcmp( security, "open" ) == 0 ) {
-        wifi_type->access_sec = WIFI_ECN_OPEN;
-    } else if ( strcmp( security, "wep" ) == 0 ) {
-        wifi_type->access_sec = WIFI_ECN_WEP;
-    } else if ( strcmp( security, "wpa" ) == 0 ) {
-        wifi_type->access_sec = WIFI_ECN_WPA_PSK;
-    } else if ( strcmp( security, "wpa2" ) == 0 ) {
-        wifi_type->access_sec = WIFI_ECN_WPA2_PSK;
-    } else {
-        // set WIFI_ECN_WPA2_PSK as default
-        wifi_type->access_sec = WIFI_ECN_WPA2_PSK;
-        LOGE("netmgr", "Invalid access security settings! Only support open|wep|wpa|wpa2");
-    }
-}
-
-static bool valid_access_security(char *security)
-{
-    bool ret = false;
-    if ( strcmp( security, "open" ) == 0
-         || strcmp( security, "wep" ) == 0
-         || strcmp( security, "wpa" ) == 0
-         || strcmp( security, "wpa2" ) == 0 ) {
-        ret = true;
-    }
-    return ret;
-}
-#endif
-
 static void reconnect_wifi(void *arg)
 {
     hal_wifi_module_t    *module;
@@ -285,9 +357,6 @@ static void reconnect_wifi(void *arg)
     type.dhcp_mode = DHCP_CLIENT;
     strncpy(type.wifi_ssid, ap_config->ssid, sizeof(type.wifi_ssid) - 1);
     strncpy(type.wifi_key, ap_config->pwd, sizeof(type.wifi_key) - 1);
-#ifdef STM32L475xx
-    set_access_security(&type, ap_config->security);
-#endif
     hal_wifi_start(module, &type);
 }
 
@@ -306,11 +375,10 @@ static void get_wifi_ssid(void)
     memset(g_netmgr_cxt.ap_config.pwd, 0, sizeof(g_netmgr_cxt.ap_config.pwd));
     strncpy(g_netmgr_cxt.ap_config.pwd, g_netmgr_cxt.saved_conf.pwd,
             sizeof(g_netmgr_cxt.ap_config.pwd) - 1);
-#ifdef STM32L475xx
-    memset(g_netmgr_cxt.ap_config.security, 0, sizeof(g_netmgr_cxt.ap_config.security));
-    strncpy(g_netmgr_cxt.ap_config.security, g_netmgr_cxt.saved_conf.security,
-            sizeof(g_netmgr_cxt.ap_config.security) - 1);
-#endif
+
+    memset(g_netmgr_cxt.ap_config.bssid, 0, sizeof(g_netmgr_cxt.ap_config.bssid));
+    memcpy(g_netmgr_cxt.ap_config.bssid, g_netmgr_cxt.saved_conf.bssid,
+           sizeof(g_netmgr_cxt.ap_config.bssid));
 }
 
 static int clear_wifi_ssid(void)
@@ -319,8 +387,9 @@ static int clear_wifi_ssid(void)
 
     memset(g_netmgr_cxt.ap_config.ssid, 0, sizeof(g_netmgr_cxt.ap_config.ssid));
     memset(g_netmgr_cxt.ap_config.pwd, 0, sizeof(g_netmgr_cxt.ap_config.pwd));
+    memset(g_netmgr_cxt.ap_config.bssid, 0, sizeof(g_netmgr_cxt.ap_config.bssid));
 
-    memset(&g_netmgr_cxt.saved_conf, 0, sizeof(wifi_conf_t));
+    memset(&g_netmgr_cxt.saved_conf, 0, sizeof(netmgr_ap_config_t));
     ret = aos_kv_del(NETMGR_WIFI_KEY); // use kv_del instead of kv_set in case kv is full
 
     return ret;
@@ -328,23 +397,37 @@ static int clear_wifi_ssid(void)
 
 static int set_wifi_ssid(void)
 {
-    int ret = 0;
+    int ret = -1, len;
+    netmgr_ap_config_t tmp;
+
+    /* Do not save hotspot and router APs. */
+    if (strcmp(g_netmgr_cxt.ap_config.ssid, HOTSPOT_AP) == 0 || \
+        strcmp(g_netmgr_cxt.ap_config.ssid, ROUTER_AP) == 0) {
+        return -1;
+    }
+
+    len = sizeof(netmgr_ap_config_t);
+    ret = aos_kv_get(NETMGR_WIFI_KEY, &tmp, &len);
+
+    /* Do not save if the same AP already saved. */
+    if (!ret && memcmp(&tmp, &(g_netmgr_cxt.ap_config), sizeof(tmp)) == 0) {
+        return -1;
+    }
 
     memset(&g_netmgr_cxt.saved_conf, 0,
-           sizeof(wifi_conf_t));
+           sizeof(netmgr_ap_config_t));
     strncpy(g_netmgr_cxt.saved_conf.ssid,
             g_netmgr_cxt.ap_config.ssid,
             sizeof(g_netmgr_cxt.saved_conf.ssid) - 1);
     strncpy(g_netmgr_cxt.saved_conf.pwd,
             g_netmgr_cxt.ap_config.pwd,
             sizeof(g_netmgr_cxt.saved_conf.pwd) - 1);
-#ifdef STM32L475xx
-    strncpy(g_netmgr_cxt.saved_conf.security,
-            g_netmgr_cxt.ap_config.security,
-            sizeof(g_netmgr_cxt.saved_conf.security) - 1);
-#endif
-    ret = aos_kv_set(NETMGR_WIFI_KEY, (unsigned char *)&g_netmgr_cxt.saved_conf,
-                     sizeof(wifi_conf_t), 1);
+    memcpy(g_netmgr_cxt.saved_conf.bssid,
+           g_netmgr_cxt.ap_config.bssid,
+           sizeof(g_netmgr_cxt.saved_conf.bssid));
+
+    ret =  aos_kv_set(NETMGR_WIFI_KEY, &g_netmgr_cxt.saved_conf,
+                      sizeof(netmgr_ap_config_t), 1);
 
     return ret;
 }
@@ -385,9 +468,15 @@ static void netmgr_events_executor(input_event_t *eventinfo, void *priv_data)
             break;
         case CODE_WIFI_ON_PRE_GOT_IP:
             if (g_netmgr_cxt.doing_smartconfig) {
-                g_netmgr_cxt.autoconfig_chain->config_result_cb(
-                    0, g_netmgr_cxt.ipv4_owned);
-                g_netmgr_cxt.autoconfig_chain->autoconfig_stop();
+                if (strcmp(g_netmgr_cxt.ap_config.ssid, HOTSPOT_AP) != 0 && \
+                    strcmp(g_netmgr_cxt.ap_config.ssid, ROUTER_AP) != 0) {
+                    LOGI(TAG, "Let's post GOT_IP event.");
+                    g_netmgr_cxt.autoconfig_chain->config_result_cb(
+                        0, g_netmgr_cxt.ipv4_owned);
+                    g_netmgr_cxt.autoconfig_chain->autoconfig_stop();
+                } else {
+                    LOGI(TAG, "In hotspot/router mode, do not post GOT_IP event here.");
+                }
             } else {
                 aos_post_event(EV_WIFI, CODE_WIFI_ON_GOT_IP,
                                (unsigned long)(&g_netmgr_cxt.ipv4_owned));
@@ -395,9 +484,9 @@ static void netmgr_events_executor(input_event_t *eventinfo, void *priv_data)
             break;
         case CODE_WIFI_ON_GOT_IP:
             if (g_netmgr_cxt.doing_smartconfig) {
-                set_wifi_ssid();
                 g_netmgr_cxt.doing_smartconfig = false;
             }
+            set_wifi_ssid();
             break;
         case CODE_WIFI_CMD_RECONNECT:
             g_netmgr_cxt.disconnected_times = 0;
@@ -460,7 +549,8 @@ int  netmgr_get_ap_config(netmgr_ap_config_t *config)
 
     strncpy(config->ssid, g_netmgr_cxt.ap_config.ssid, MAX_SSID_SIZE);
     strncpy(config->pwd, g_netmgr_cxt.ap_config.pwd, MAX_PWD_SIZE);
-    strncpy(config->bssid, g_netmgr_cxt.ap_config.bssid, MAX_BSSID_SIZE);
+    memcpy(config->bssid, g_netmgr_cxt.ap_config.bssid, sizeof(config->bssid));
+
     return 0;
 }
 
@@ -468,9 +558,7 @@ void netmgr_clear_ap_config(void)
 {
     clear_wifi_ssid();
 }
-AOS_EXPORT(void, netmgr_clear_ap_config, void);
 
-#define HOTSPOT_AP "aha"
 int netmgr_set_ap_config(netmgr_ap_config_t *config)
 {
     int ret = 0;
@@ -479,29 +567,9 @@ int netmgr_set_ap_config(netmgr_ap_config_t *config)
             sizeof(g_netmgr_cxt.ap_config.ssid) - 1);
     strncpy(g_netmgr_cxt.ap_config.pwd, config->pwd,
             sizeof(g_netmgr_cxt.ap_config.pwd) - 1);
+    memcpy(g_netmgr_cxt.ap_config.bssid, config->bssid,
+           sizeof(g_netmgr_cxt.ap_config.bssid));
 
-    strncpy(g_netmgr_cxt.saved_conf.ssid, config->ssid,
-            sizeof(g_netmgr_cxt.saved_conf.ssid) - 1);
-    strncpy(g_netmgr_cxt.saved_conf.pwd, config->pwd,
-            sizeof(g_netmgr_cxt.saved_conf.pwd) - 1);
-#ifdef STM32L475xx
-    strncpy(g_netmgr_cxt.ap_config.security,
-            config->security, MAX_SECURITY_SIZE);
-    strncpy(g_netmgr_cxt.saved_conf.security, config->security,
-            sizeof(g_netmgr_cxt.saved_conf.security) - 1);
-    // STM32L475E ip stack running on WiFi MCU, can only configure with CLI(no ywss)
-    // So save the wifi config while config from CLI
-
-    if (valid_access_security(g_netmgr_cxt.ap_config.security)) {
-        if (strcmp(config->ssid, HOTSPOT_AP) != 0)
-            ret = aos_kv_set(NETMGR_WIFI_KEY, &g_netmgr_cxt.saved_conf,
-                             sizeof(wifi_conf_t), 1);
-    }
-#else
-    if (strcmp(config->ssid, HOTSPOT_AP) != 0) // Do not save hotspot AP
-        ret = aos_kv_set(NETMGR_WIFI_KEY, &g_netmgr_cxt.saved_conf,
-                         sizeof(wifi_conf_t), 1);
-#endif
     return ret;
 }
 
@@ -516,7 +584,7 @@ static void read_persistent_conf(void)
     int ret;
     int len;
 
-    len = sizeof(wifi_conf_t);
+    len = sizeof(netmgr_ap_config_t);
     ret = aos_kv_get(NETMGR_WIFI_KEY, &g_netmgr_cxt.saved_conf, &len);
     if (ret < 0) {
         return;
@@ -530,11 +598,7 @@ static void handle_netmgr_cmd(char *pwbuf, int blen, int argc, char **argv)
     if (strcmp(rtype, "clear") == 0) {
         netmgr_clear_ap_config();
     } else if (strcmp(rtype, "connect") == 0) {
-#ifdef STM32L475xx
-        if (argc != 5) {
-#else
         if (argc != 4) {
-#endif
             return;
         }
 
@@ -542,9 +606,6 @@ static void handle_netmgr_cmd(char *pwbuf, int blen, int argc, char **argv)
 
         strncpy(config.ssid, argv[2], sizeof(config.ssid) - 1);
         strncpy(config.pwd, argv[3], sizeof(config.pwd) - 1);
-#ifdef STM32L475xx
-        strncpy(config.security, argv[4], sizeof(config.security) - 1);
-#endif
         netmgr_set_ap_config(&config);
         netmgr_start(false);
     } else {
@@ -554,11 +615,7 @@ static void handle_netmgr_cmd(char *pwbuf, int blen, int argc, char **argv)
 
 static struct cli_command ncmd = {
     .name = "netmgr",
-#ifdef STM32L475xx
-    .help = "netmgr [start|clear|connect ssid password open|wep|wpa|wpa2]",
-#else
     .help = "netmgr [start|clear|connect ssid password]",
-#endif
     .function = handle_netmgr_cmd,
 };
 
@@ -574,10 +631,12 @@ int netmgr_init(void)
     g_netmgr_cxt.ip_available = false;
     g_netmgr_cxt.wifi_scan_complete_cb_finished = false;
     g_netmgr_cxt.wifi_hal_mod = module;
+#ifndef WITH_SAL
 #if defined(CONFIG_YWSS) && !defined(CSP_LINUXHOST)
     add_autoconfig_plugin(&g_alink_smartconfig);
 #else
     add_autoconfig_plugin(&g_def_smartconfig);
+#endif
 #endif
     hal_wifi_install_event(g_netmgr_cxt.wifi_hal_mod, &g_wifi_hal_event);
     read_persistent_conf();
@@ -588,7 +647,6 @@ int netmgr_init(void)
 
     return 0;
 }
-AOS_EXPORT(int, netmgr_init, void);
 
 void netmgr_deinit(void)
 {
@@ -620,7 +678,6 @@ int netmgr_start(bool autoconfig)
     start_mesh(false);
     return -1;
 }
-AOS_EXPORT(int, netmgr_start, bool);
 
 bool netmgr_get_ip_state()
 {
@@ -632,6 +689,17 @@ bool netmgr_get_scan_cb_finished()
     return g_netmgr_cxt.wifi_scan_complete_cb_finished;
 }
 
+/* Returned IP[16] is in dot format, eg. 192.168.1.1. */
+void netmgr_wifi_get_ip(char ip[])
+{
+    if (!ip) {
+        LOGE(TAG, "Invalid argument in %s", __func__);
+    } else {
+        format_ip(g_netmgr_cxt.ipv4_owned, ip);
+    }
+}
+
+#ifndef WITH_SAL
 #if !defined(CONFIG_YWSS) || defined(CSP_LINUXHOST)
 static int def_smart_config_start(void)
 {
@@ -660,4 +728,5 @@ static autoconfig_plugin_t g_def_smartconfig = {
     .autoconfig_stop = def_smart_config_stop,
     .config_result_cb = def_smart_config_result_cb
 };
+#endif
 #endif

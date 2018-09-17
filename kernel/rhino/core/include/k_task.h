@@ -16,11 +16,16 @@ typedef enum {
     K_DELETED,
 } task_stat_t;
 
-typedef struct {
-    void            *task_stack;
 
+/* task control information */
+typedef struct {
+    /* update while task switching
+       access by assemble code, so do not change position */
+    void            *task_stack;
+    /* access by activation, so do not change position */
+    const name_t    *task_name;
 #if (RHINO_CONFIG_TASK_INFO > 0)
-    /* for user data extension do not move the position! */
+    /* access by assemble code, so do not change position */
     void            *user_info[RHINO_CONFIG_TASK_INFO_NUM];
 #endif
 
@@ -48,8 +53,6 @@ typedef struct {
 #if (RHINO_CONFIG_BUF_QUEUE > 0)
     size_t           bq_msg_size;
 #endif
-
-    const name_t    *task_name;
 
     task_stat_t      task_state;
     blk_state_t      blk_state;
@@ -132,6 +135,9 @@ kstat_t krhino_task_cpu_create(ktask_t *task, const name_t *name, void *arg,
                                uint8_t prio, tick_t ticks, cpu_stack_t *stack_buf,
                                size_t stack_size, task_entry_t entry, uint8_t cpu_num,
                                uint8_t autorun);
+
+kstat_t krhino_task_cpu_bind(ktask_t *task, uint8_t cpu_num);
+kstat_t krhino_task_cpu_unbind(ktask_t *task);
 #endif
 
 
@@ -152,6 +158,12 @@ kstat_t krhino_task_dyn_create(ktask_t **task, const name_t *name, void *arg,
                                uint8_t pri,
                                tick_t ticks, size_t stack,
                                task_entry_t entry, uint8_t autorun);
+
+#if (RHINO_CONFIG_CPU_NUM > 1)
+kstat_t krhino_task_cpu_dyn_create(ktask_t **task, const name_t *name, void *arg,
+                                   uint8_t pri, tick_t ticks, size_t stack,
+                                   task_entry_t entry, uint8_t cpu_num, uint8_t autorun);
+#endif
 #endif
 
 #if (RHINO_CONFIG_TASK_DEL > 0)

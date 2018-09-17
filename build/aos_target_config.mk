@@ -43,18 +43,16 @@ $(eval TEST_COMPONENTS := $(addprefix %., $(addsuffix _test, $(TEST_COMPONENTS))
 $(eval COMPONENTS += $(filter $(TEST_COMPONENTS),  $(subst /,.,$(strip $(TEST_COMPONENT_LIST)))))))
 endef
 
-
 #####################################################################################
-# Macro PROCESS_COMPONENT
+# Macro FIND_COMPONENT  use breadth traversal to search component
 # $(1) is the list of components left to process. $(COMP) is set as the first element in the list
-define PROCESS_COMPONENT
+define FIND_COMPONENT
 
 $(eval COMP := $(word 1,$(1)))
 $(eval COMP_LOCATION := $(subst .,/,$(COMP)))
 $(eval COMP_MAKEFILE_NAME := $(notdir $(COMP_LOCATION)))
 # Find the component makefile in directory list
-$(eval TEMP_MAKEFILE := $(strip $(wildcard $(foreach dir, $(if $(filter-out out, $(BUILD_DIR)),$(OUTPUT_DIR),) $(if $(APPDIR),$(APPDIR)/$(comp),) $(addprefix $(SOURCE_ROOT),$(COMPONENT_DIRECTORIES)), $(dir)/$(COMP_LOCATION)/$(COMP_MAKEFILE_NAME).mk))))
-
+$(eval TEMP_MAKEFILE := $(strip $(wildcard $(foreach dir, $(if $(filter-out out, $(BUILD_DIR)),$(OUTPUT_DIR) $(OUTPUT_DIR)/syscall,) $(if $(APPDIR),$(APPDIR),) $(if $(CUBE_AOS_DIR),$(CUBE_AOS_DIR) $(CUBE_AOS_DIR)/remote,) $(addprefix $(SOURCE_ROOT),$(COMPONENT_DIRECTORIES)), $(dir)/$(COMP_LOCATION)/$(COMP_MAKEFILE_NAME).mk))))
 # Check if component makefile was found - if not try downloading it and re-doing the makefile search
 $(if $(TEMP_MAKEFILE),,\
 	 $(info Unknown component: $(COMP) - directory or makefile for component not found. Ensure the $(COMP_LOCATION) directory contains $(COMP_MAKEFILE_NAME).mk) \
@@ -65,6 +63,44 @@ $(if $(TEMP_MAKEFILE),,\
      $(info $(call DOWNLOAD_COMPONENT_LIST)) \
      $(error Unknown component: $(COMP) - directory or makefile for component not found. Ensure the $(COMP_LOCATION) directory contains $(COMP_MAKEFILE_NAME).mk))
 $(if $(filter 1,$(words $(TEMP_MAKEFILE))),,$(error More than one component with the name "$(COMP)". See $(TEMP_MAKEFILE)))
+
+$(eval TEMP_MAKEFILE := $(subst ././,./,$(TEMP_MAKEFILE)))
+$(eval include $(TEMP_MAKEFILE))
+$(eval deps :=)
+$(eval deps_src := $($(NAME)_COMPONENTS))
+$(eval components_cube := $(subst .,/,$(COMPONENTS)))
+$(eval deps_cube := $(subst .,/,$($(NAME)_COMPONENTS)))
+
+$(foreach dep, $(deps_cube),\
+	$(eval comp_dep := $(firstword $(deps_src))) \
+	$(eval find := 0) \
+	$(foreach component, $(components_cube) $(CUBE_REMOVE_COMPONENTS), \
+		$(if $(filter $(notdir $(dep)),$(notdir $(component))), \
+			$(if $(findstring $(dep), $(component)),$(eval find := 1))))\
+	$(if $(filter 0, $(find)), $(eval deps += $(comp_dep))) \
+	$(eval deps_src := $(filter-out $(comp_dep),$(deps_src))))
+
+$(if $(findstring $(TEMP_MAKEFILE),$(ALL_MAKEFILES)),,\
+	$(eval ALL_MAKEFILES += $(TEMP_MAKEFILE)) \
+	$(eval COMPONENTS += $(deps)) \
+	$(call PREPROCESS_TEST_COMPONENT, $(COMPONENTS), $(TEST_COMPONENTS)) \
+	DEPENDENCY += '$(NAME)': '$($(NAME)_COMPONENTS)',)
+
+$(eval PROCESSED_COMPONENTS_LOCS += $(COMP))
+$(if $(strip $(filter-out $(PROCESSED_COMPONENTS_LOCS),$(COMPONENTS))),\
+     $(call FIND_COMPONENT,$(filter-out $(PROCESSED_COMPONENTS_LOCS),$(COMPONENTS))),\
+)
+endef
+
+#####################################################################################
+# Macro PROCESS_ONE_COMPONENT
+# $(1) is one component
+define PROCESS_ONE_COMPONENT
+$(eval COMP := $(1))
+$(eval COMP_LOCATION := $(subst .,/,$(COMP)))
+$(eval COMP_MAKEFILE_NAME := $(notdir $(COMP_LOCATION)))
+# Find the component makefile in directory list
+$(eval TEMP_MAKEFILE := $(strip $(wildcard $(foreach dir, $(if $(filter-out out, $(BUILD_DIR)),$(OUTPUT_DIR) $(OUTPUT_DIR)/syscall,) $(if $(APPDIR),$(APPDIR)/$(comp),) $(if $(CUBE_AOS_DIR),$(CUBE_AOS_DIR) $(CUBE_AOS_DIR)/remote) $(addprefix $(SOURCE_ROOT),$(COMPONENT_DIRECTORIES)), $(dir)/$(COMP_LOCATION)/$(COMP_MAKEFILE_NAME).mk))))
 
 # Clear all the temporary variables
 $(eval GLOBAL_INCLUDES:=)
@@ -112,7 +148,7 @@ $(eval $(NAME)_RESOURCES_EXPANDED := $(foreach res,$($(NAME)_RESOURCES),$(word 1
 
 $(eval CURDIR := $(OLD_CURDIR))
 
-$(eval $(NAME)_LOCATION ?= $(dir $(TEMP_MAKEFILE)))
+$(eval $(NAME)_LOCATION := $(dir $(TEMP_MAKEFILE)))
 $(eval $(NAME)_MAKEFILE := $(TEMP_MAKEFILE))
 AOS_SDK_MAKEFILES     += $($(NAME)_MAKEFILE)
 
@@ -143,14 +179,17 @@ AOS_SDK_CONVERTER_OUTPUT_FILE += $(CONVERTER_OUTPUT_FILE)
 AOS_SDK_FINAL_OUTPUT_FILE += $(BIN_OUTPUT_FILE)
 
 $(eval PROCESSED_COMPONENTS += $(NAME))
-$(eval PROCESSED_COMPONENTS_LOCS += $(COMP))
-$(eval COMPONENTS += $($(NAME)_COMPONENTS))
 
-$(call PREPROCESS_TEST_COMPONENT, $(COMPONENTS), $(TEST_COMPONENTS))
+$(eval $(NAME)_SOURCES := $(sort $($(NAME)_SOURCES)) )
 
-DEPENDENCY += '$(NAME)': '$($(NAME)_COMPONENTS)',
+endef
 
-$(if $(strip $(filter-out $(PROCESSED_COMPONENTS_LOCS),$(COMPONENTS))),$(eval $(call PROCESS_COMPONENT,$(filter-out $(PROCESSED_COMPONENTS_LOCS),$(COMPONENTS)))),)
+
+#####################################################################################
+# Macro PROCESS_COMPONENT
+# $(1) is the list of components left to process. $(COMP) is set as the first element in the list
+define PROCESS_COMPONENT
+$(foreach TMP_COMP, $(COMPONENTS),$(call PROCESS_ONE_COMPONENT, $(TMP_COMP)))
 endef
 
 ##################################
@@ -159,6 +198,7 @@ endef
 
 # Separate the build string into components
 COMPONENTS := $(subst @, ,$(MAKECMDGOALS))
+
 
 ifneq (,$(filter mk3060,$(COMPONENTS)))
 ifneq (,$(filter bootloader,$(COMPONENTS)))
@@ -184,8 +224,9 @@ else
 AOS_SDK_LDFLAGS  += $(COMPILER_SPECIFIC_DEBUG_LDFLAGS)
 endif
 
+
 # Check if there are any unknown components; output error if so.
-$(foreach comp, $(COMPONENTS), $(if $(wildcard $(APPDIR)/$(comp) $(foreach dir, $(addprefix $(SOURCE_ROOT),$(COMPONENT_DIRECTORIES)), $(dir)/$(subst .,/,$(comp)) ) ),,$(error Unknown component: $(comp))))
+$(foreach comp, $(COMPONENTS), $(if $(wildcard $(APPDIR)/$(comp) $(CUBE_AOS_DIR)/$(comp) $(foreach dir, $(addprefix $(SOURCE_ROOT),$(COMPONENT_DIRECTORIES)), $(dir)/$(subst .,/,$(comp)) ) ),,$(error Unknown component: $(comp))))
 
 # Find the matching platform and application from the build string components
 PLATFORM_FULL   :=$(strip $(foreach comp,$(subst .,/,$(COMPONENTS)),$(if $(wildcard $(SOURCE_ROOT)board/$(comp)),$(comp),)))
@@ -204,6 +245,7 @@ EXTRA_CFLAGS :=    -DAOS_SDK_VERSION_MAJOR=$(AOS_SDK_VERSION_MAJOR) \
 
 # Load platform makefile to make variables like WLAN_CHIP, HOST_OPENOCD & HOST_ARCH available to all makefiles
 $(eval CURDIR := $(SOURCE_ROOT)board/$(PLATFORM_DIRECTORY)/)
+
 include $(SOURCE_ROOT)board/$(PLATFORM_DIRECTORY)/$(notdir $(PLATFORM_DIRECTORY)).mk
 
 PLATFORM_MCU_BOARD	:=$(subst .,/,$(HOST_MCU_FAMILY))
@@ -219,6 +261,10 @@ CC :=
 
 ifeq ($(COMPILER),armcc)
 include $(MAKEFILES_PATH)/aos_toolchain_armcc.mk
+else ifeq ($(COMPILER),rvct)
+include $(MAKEFILES_PATH)/aos_toolchain_rvct.mk
+else ifeq ($(COMPILER),iar)
+include $(MAKEFILES_PATH)/aos_toolchain_iar.mk
 else
 include $(MAKEFILES_PATH)/aos_toolchain_gcc.mk
 endif
@@ -226,6 +272,8 @@ endif
 ifndef CC
 $(error No matching toolchain found for architecture $(HOST_ARCH))
 endif
+
+
 
 # Process all the components + AOS
 
@@ -253,9 +301,18 @@ else ifeq (,$(BINS))
 AOS_SDK_DEFINES += BUILD_BIN
 endif
 
-$(info processing components: $(COMPONENTS))
+ALL_MAKEFILES :=
+ifneq ($(CUBE_MAKEFILE), )
+include $(CUBE_MAKEFILE)
+COMPONENTS += $(CUBE_ADD_COMPONENTS)
+COMPONENT_DIRECTORIES += $(CUBE_AOS_DIR)
+endif
 
 CURDIR :=
+$(info processing components: $(COMPONENTS))
+$(eval $(call FIND_COMPONENT, $(COMPONENTS)))
+# remove repeat component
+$(eval COMPONENTS := $(sort $(COMPONENTS)) )
 $(eval $(call PROCESS_COMPONENT, $(COMPONENTS)))
 
 PLATFORM    :=$(notdir $(PLATFORM_FULL))
@@ -275,6 +332,9 @@ $(if $(APP),,$(error No application specified. Options are: $(notdir $(wildcard 
 #$(if $(WLAN_CHIP_REVISION),,$(error No WLAN_CHIP_REVISION has been defined))
 #$(if $(WLAN_CHIP_FAMILY),,$(error No WLAN_CHIP_FAMILY has been defined))
 $(if $(HOST_OPENOCD),,$(error No HOST_OPENOCD has been defined))
+
+VALID_PLATFORMS :=
+INVALID_PLATFORMS :=
 
 $(eval VALID_PLATFORMS := $(call EXPAND_WILDCARD_PLATFORMS,$(VALID_PLATFORMS)))
 $(eval INVALID_PLATFORMS := $(call EXPAND_WILDCARD_PLATFORMS,$(INVALID_PLATFORMS)))
@@ -393,4 +453,55 @@ $(CONFIG_FILE): $(AOS_SDK_MAKEFILES) | $(CONFIG_FILE_DIR)
 	$(QUIET)$(call WRITE_FILE_APPEND, $(CONFIG_FILE) ,AOS_SDK_CONVERTER_OUTPUT_FILE	:= $(AOS_SDK_CONVERTER_OUTPUT_FILE))
 	$(QUIET)$(call WRITE_FILE_APPEND, $(CONFIG_FILE) ,AOS_SDK_FINAL_OUTPUT_FILE 		:= $(AOS_SDK_FINAL_OUTPUT_FILE))
 	$(QUIET)$(call WRITE_FILE_APPEND, $(CONFIG_FILE) ,AOS_RAM_STUB_LIST_FILE 			:= $(AOS_RAM_STUB_LIST_FILE))
+	$(QUIET)$(call WRITE_FILE_APPEND, $(CONFIG_FILE) ,PING_PONG_OTA 					:= $(PING_PONG_OTA))
 endif
+
+CONFIG_PY_FILE := build/scripts/config_mk.py
+
+# write a component name in python format
+define WRITE_COMPOENT_PY
+$(call WRITE_FILE_APPEND, $(CONFIG_PY_FILE) ,{'name':'$(comp)'$(COMMA) )
+$(call WRITE_FILE_APPEND, $(CONFIG_PY_FILE) ,'src':[ )
+$(eval SOURCES_FULLPATH := $(addprefix $($(comp)_LOCATION), $($(comp)_SOURCES)))
+$(foreach src,$(SOURCES_FULLPATH), $(call WRITE_FILE_APPEND, $(CONFIG_PY_FILE) ,'$(src)'$(COMMA)))
+$(eval LIB_FULLPATH := $(addprefix $($(comp)_LOCATION), $($(comp)_PREBUILT_LIBRARY)))
+$(foreach complib,$(LIB_FULLPATH), $(call WRITE_FILE_APPEND, $(CONFIG_PY_FILE) ,'$(complib)'$(COMMA)))
+$(call WRITE_FILE_APPEND, $(CONFIG_PY_FILE) ,]$(COMMA))
+
+$(call WRITE_FILE_APPEND, $(CONFIG_PY_FILE) ,'include':[ )
+$(eval INCLUDE_FULLPATH := $(addprefix $($(comp)_LOCATION),$($(comp)_INCLUDES)) )
+$(eval INCLUDE_FULLPATH += $(subst -I.,.,$(call unique,$(AOS_SDK_INCLUDES))) )
+$(foreach inc,$(INCLUDE_FULLPATH), $(call WRITE_FILE_APPEND, $(CONFIG_PY_FILE) ,'$(inc)'$(COMMA)))
+$(call WRITE_FILE_APPEND, $(CONFIG_PY_FILE) ,]$(COMMA))
+$(call WRITE_FILE_APPEND, $(CONFIG_PY_FILE) ,}$(COMMA))
+endef
+
+PROJ_GEN_DIR   := projects/autogen/$(CLEANED_BUILD_STRING)
+
+ifeq ($(IDE),iar)
+PROJECT_GEN := $(PROJ_GEN_DIR)/iar_project/$(CLEANED_BUILD_STRING).ewp
+$(MAKECMDGOALS): $(PROJECT_GEN)
+$(PROJECT_GEN): build/scripts/iar.py build/aos_target_config.mk $(CONFIG_FILE)
+	$(QUIET)echo Making $(IDE) Project
+	$(QUIET)$(call WRITE_FILE_CREATE, $(CONFIG_PY_FILE) ,Projects = [)
+	$(QUIET)$(foreach comp,$(PROCESSED_COMPONENTS), $(call WRITE_COMPOENT_PY ))
+	$(QUIET)$(call WRITE_FILE_APPEND, $(CONFIG_PY_FILE) ,])
+	$(QUIET)$(call MKDIR, $(PROJ_GEN_DIR)/iar_project)
+	$(QUIET)cp -f  build/scripts/template.ewd $(PROJ_GEN_DIR)/iar_project/$(CLEANED_BUILD_STRING).ewd
+	python build/scripts/iar.py $(CLEANED_BUILD_STRING)
+	$(QUIET)echo ----------- iar project has generated in $(PROJ_GEN_DIR)/iar_project ----------- 
+endif
+
+ifeq ($(IDE),keil)
+PROJECT_GEN := $(PROJ_GEN_DIR)/keil_project/$(CLEANED_BUILD_STRING).uvprojx
+$(MAKECMDGOALS): $(PROJECT_GEN)
+$(PROJECT_GEN): build/scripts/keil.py build/aos_target_config.mk $(CONFIG_FILE)
+	$(QUIET)echo Making $(IDE) Project
+	$(QUIET)$(call WRITE_FILE_CREATE, $(CONFIG_PY_FILE) ,Projects = [)
+	$(QUIET)$(foreach comp,$(PROCESSED_COMPONENTS), $(call WRITE_COMPOENT_PY ))
+	$(QUIET)$(call WRITE_FILE_APPEND, $(CONFIG_PY_FILE) ,])
+	$(QUIET)$(call MKDIR, $(PROJ_GEN_DIR)/keil_project)
+	python build/scripts/keil.py $(CLEANED_BUILD_STRING)
+	$(QUIET)echo ----------- keil project has generated in $(PROJ_GEN_DIR)/keil_project ----------- 
+endif
+

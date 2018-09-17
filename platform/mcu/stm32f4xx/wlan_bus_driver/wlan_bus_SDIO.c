@@ -1,24 +1,6 @@
-/**
- ******************************************************************************
- * @file    wlan_bus_sdio.h
- * @author  William Xu
- * @version V1.0.0
- * @date    16-Sep-2014
- * @brief   This file provides SDIO bus communication functions with Wi-Fi RF chip.
- ******************************************************************************
- *  UNPUBLISHED PROPRIETARY SOURCE CODE
- *  Copyright (c) 2016 MXCHIP Inc.
- *
- *  The contents of this file may not be disclosed to third parties, copied or
- *  duplicated in any form, in whole or in part, without the prior written
- *  permission of MXCHIP Corporation.
- ******************************************************************************
- */
 
 #include "misc.h"
 #include "string.h" /* For memcpy */
-#include "platform.h"
-#include "platform_config.h"
 #include "platform_peripheral.h"
 #include "platform_logging.h"
 #include "wlan_platform_common.h"

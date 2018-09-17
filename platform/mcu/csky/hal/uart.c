@@ -12,59 +12,56 @@
 #include "pin.h"
 #include "ringbuffer.h"
 #include "soc.h"
-#include "mico_rtos.h"
+#include "aos/kernel.h"
 
 #define MAX_UART_NUM 3
 #define STAT_XMIT_IDLE      0x00
 #define STAT_XMIT_READ      0x01
 #define STAT_XMIT_WRITE     0x02
-#define UART_FIFO_SIZE 256
+#define UART_FIFO_SIZE      256
+char console_uart_buf[UART_FIFO_SIZE];
+
+static ringbuffer_t g_uart_rb;
 
 typedef struct usart_dev_s {
     int     crefs;                      /* The number of USARTs the device has been opened */
-    mico_semaphore_t ksem_excl;          /* Mutual exclusion semaphore */
+    aos_sem_t ksem_excl;          /* Mutual exclusion semaphore */
     usart_handle_t usart_handle;
 
     ringbuffer_t *read_buffer;
     /* I/O buffers */
-    mico_semaphore_t       ksem_write;
-    mico_semaphore_t       ksem_read;
+    aos_sem_t       ksem_write;
+    aos_sem_t       ksem_read;
     usart_event_e          usart_txevent;
     usart_event_e          usart_rxevent;
     uint8_t                stat_txmit;
     uint8_t                stat_rxmit;
     uint32_t               read_num;
     uint8_t                flowctrl;
-    mico_mutex_t           tx_mutex;
+    aos_mutex_t           tx_mutex;
 } usart_dev_t;
 
 static usart_dev_t usart_devs[MAX_UART_NUM];
 
-static int32_t pins[MAX_UART_NUM][4] = {
-    {UART_TXD0,UART_RXD0,0,0},
-    {UART_TXD1,UART_RXD1,0,0},
-    {UART_TXD2,UART_RXD2,UART_CTS2,UART_RTS2}
-};
-
-static void usart_event_cb_fun(usart_event_e event, void *cb_arg)
+static void usart_event_cb_fun(int32_t idx, usart_event_e event)
 {
-    usart_dev_t *usart_dev = (usart_dev_t *)cb_arg;
+    usart_dev_t *usart_dev = &usart_devs[idx];
     usart_handle_t handle = usart_dev->usart_handle;
 
     switch (event) {
         case USART_EVENT_SEND_COMPLETE:
             if (usart_dev->stat_txmit == STAT_XMIT_WRITE) {
                 usart_dev->usart_txevent = event;
-                mico_rtos_set_semaphore(usart_dev->ksem_write);
+                aos_sem_signal(&usart_dev->ksem_write);
             }
 
             break;
 
         case USART_EVENT_RECEIVE_COMPLETE:
-            if ( usart_dev->stat_rxmit == STAT_XMIT_READ) {
+            if (usart_dev->stat_rxmit == STAT_XMIT_READ) {
 
                 usart_dev->usart_rxevent = event;
-                mico_rtos_set_semaphore(usart_dev->ksem_read);
+                aos_sem_signal(&usart_dev->ksem_read);
             }
 
             break;
@@ -77,6 +74,7 @@ static void usart_event_cb_fun(usart_event_e event, void *cb_arg)
             if (usart_dev->read_buffer == NULL) {
                 break;
             }
+
 #if 0
             /* flow ctrl */
             if (usart_dev->flowctrl) {
@@ -89,15 +87,17 @@ static void usart_event_cb_fun(usart_event_e event, void *cb_arg)
             }
 #endif
             ret = csi_usart_receive_query(handle, data, 16);
+
             if (usart_dev->stat_rxmit != STAT_XMIT_READ) {
                 return;
             }
+
             ringbuffer_write(usart_dev->read_buffer, (uint8_t *)data, ret);
 
             if (ringbuffer_available_read_space(usart_dev->read_buffer) >= usart_dev->read_num) {
                 if (usart_dev->stat_rxmit == STAT_XMIT_READ) {
                     usart_dev->usart_rxevent = USART_EVENT_RECEIVE_COMPLETE;
-                    mico_rtos_set_semaphore(usart_dev->ksem_read);
+                    aos_sem_signal(&usart_dev->ksem_read);
                 }
             }
         }
@@ -109,7 +109,7 @@ static void usart_event_cb_fun(usart_event_e event, void *cb_arg)
         default:
             if (usart_dev->stat_rxmit == STAT_XMIT_READ) {
                 usart_dev->usart_rxevent = event;
-                mico_rtos_set_semaphore(usart_dev->ksem_read);
+                aos_sem_signal(&usart_dev->ksem_read);
 
                 usart_dev->stat_rxmit = STAT_XMIT_IDLE;
             }
@@ -122,38 +122,47 @@ static int32_t usart_config(uart_dev_t *uart)
 
     /* config uart parity attribute */
     usart_parity_e parity;
+
     switch (uart->config.parity) {
         case NO_PARITY:
             parity = USART_PARITY_NONE;
-        break;
+            break;
+
         case ODD_PARITY:
             parity = USART_PARITY_ODD;
-        break;
+            break;
+
         case EVEN_PARITY:
             parity = USART_PARITY_EVEN;
-        break;
-        default:
-            return -1;
-    }
-    /* config stop bit attribute */
-    usart_stop_bits_e stopbits;
-    switch (uart->config.stop_bits) {
-        case STOP_BITS_1:
-            parity = USART_STOP_BITS_1;
-        break;
-        case STOP_BITS_2:
-            parity = USART_STOP_BITS_2;
-        break;
+            break;
+
         default:
             return -1;
     }
 
-    int32_t ret = csi_usart_config(usart_dev->usart_handle, SYSTEM_CLOCK, uart->config.baud_rate, USART_MODE_ASYNCHRONOUS, parity, stopbits, uart->config.data_width);
+    /* config stop bit attribute */
+    usart_stop_bits_e stopbits;
+
+    switch (uart->config.stop_bits) {
+        case STOP_BITS_1:
+            parity = USART_STOP_BITS_1;
+            break;
+
+        case STOP_BITS_2:
+            parity = USART_STOP_BITS_2;
+            break;
+
+        default:
+            return -1;
+    }
+
+    int32_t ret = csi_usart_config(usart_dev->usart_handle, uart->config.baud_rate, USART_MODE_ASYNCHRONOUS, parity, stopbits, uart->config.data_width);
+
     if (ret < 0) {
         return -1;
     }
 
-    ret = csi_usart_config_flowctrl(usart_dev->usart_handle, uart->config.flow_control, pins[uart->port][2], pins[uart->port][3]);
+    ret = csi_usart_config_flowctrl(usart_dev->usart_handle, uart->config.flow_control);
 
     if (ret == 0) {
         usart_dev->flowctrl = 1;
@@ -171,28 +180,34 @@ int32_t hal_uart_init(uart_dev_t *uart)
         return -EIO;
     }
 
-    usart_dev->usart_handle = csi_usart_initialize(pins[uart->port][0], pins[uart->port][1], usart_event_cb_fun, usart_dev);
+    usart_dev->usart_handle = csi_usart_initialize(uart->port, usart_event_cb_fun);
+
     if (usart_dev->usart_handle == NULL) {
         return -EIO;
     }
+
     /* config uart attribute */
 
     int32_t ret = usart_config(uart);
+
     if (ret < 0) {
         csi_usart_uninitialize(usart_dev->usart_handle);
         return -EIO;
     }
+
     printf("enter hal_uart_init Ok\n");
-    mico_rtos_init_semaphore( &usart_dev->ksem_write, 0 );
-    mico_rtos_init_semaphore( &usart_dev->ksem_read, 0 );
-    mico_rtos_deinit_mutex(&usart_dev->tx_mutex);
+    aos_sem_new(&usart_dev->ksem_write, 0);
+    aos_sem_new(&usart_dev->ksem_read, 0);
+    aos_mutex_free(&usart_dev->tx_mutex);
 
-    usart_dev->read_buffer = ringbuffer_create(UART_FIFO_SIZE);
+    usart_dev->read_buffer = &g_uart_rb;
 
-    if (usart_dev->read_buffer == NULL) {
+    ret = ringbuffer_create(usart_dev->read_buffer, console_uart_buf, UART_FIFO_SIZE);
+
+    if (ret < 0) {
+        printf("console_init ringbuf_create error %d\n", ret);
         return -EIO;
     }
-
     usart_dev->crefs++;
     usart_dev->stat_rxmit = STAT_XMIT_IDLE;
     usart_dev->stat_txmit = STAT_XMIT_IDLE;
@@ -218,8 +233,8 @@ int32_t hal_uart_finalize(uart_dev_t *uart)
     usart_dev->read_buffer = NULL;
     ringbuffer_destroy(pread_buffer);
 
-    mico_rtos_deinit_semaphore(&usart_dev->ksem_write);
-    mico_rtos_deinit_semaphore(&usart_dev->ksem_read);
+    aos_sem_free(&usart_dev->ksem_write);
+    aos_sem_free(&usart_dev->ksem_read);
     csi_usart_uninitialize(usart_dev->usart_handle);
 
     usart_dev->stat_rxmit = STAT_XMIT_IDLE;
@@ -233,26 +248,26 @@ int32_t hal_uart_send(uart_dev_t *uart, const void *data, uint32_t size, uint32_
     usart_dev_t *usart_dev = &usart_devs[uart->port];
     usart_handle_t handle = usart_dev->usart_handle;
 
-    mico_rtos_lock_mutex( &usart_dev->tx_mutex );
+    aos_mutex_lock(&usart_dev->tx_mutex, AOS_WAIT_FOREVER);
 
     usart_dev->stat_txmit = STAT_XMIT_WRITE;
 
     csi_usart_send(handle, data , size);
     //wait transimit done
-     mico_rtos_get_semaphore(usart_dev->ksem_write,5);
+    aos_sem_wait(&usart_dev->ksem_write, 5);
     usart_dev->stat_txmit = STAT_XMIT_IDLE;
 
     if (usart_dev->usart_txevent != USART_EVENT_SEND_COMPLETE) {
-       // return  -EIO;
+        // return  -EIO;
     }
 
-    mico_rtos_unlock_mutex( &usart_dev->tx_mutex );
+    aos_mutex_unlock(&usart_dev->tx_mutex);
 
     return 0;
 
 }
 
-int32_t hal_uart_recv(uart_dev_t *uart, void *data, uint32_t expect_size, uint32_t *recv_size, uint32_t timeout)
+int32_t hal_uart_recv_II(uart_dev_t *uart, void *data, uint32_t expect_size, uint32_t *recv_size, uint32_t timeout)
 {
     usart_dev_t *usart_dev = &usart_devs[uart->port];
     int32_t ret;
@@ -262,11 +277,11 @@ int32_t hal_uart_recv(uart_dev_t *uart, void *data, uint32_t expect_size, uint32
 
     //wait receive done
     if (ringbuffer_available_read_space(usart_dev->read_buffer) < expect_size) {
-        mico_rtos_get_semaphore(&usart_dev->ksem_read, 50);
+        aos_sem_wait(&usart_dev->ksem_read, 50);
     }
 
     if (ringbuffer_available_read_space(usart_dev->read_buffer) >= expect_size) {
-          usart_dev->usart_rxevent = USART_EVENT_RECEIVE_COMPLETE;
+        usart_dev->usart_rxevent = USART_EVENT_RECEIVE_COMPLETE;
     }
 
     if (usart_dev->usart_rxevent != USART_EVENT_RECEIVE_COMPLETE) {
@@ -276,13 +291,17 @@ int32_t hal_uart_recv(uart_dev_t *uart, void *data, uint32_t expect_size, uint32
 
     ret = ringbuffer_read(usart_dev->read_buffer, data, expect_size);
 
-    recv_size = (uint32_t *)&ret;
+    *recv_size = (uint32_t)ret;
     /* flow ctrl */
+#if 0
+
     if (usart_dev->flowctrl) {
         if (ringbuffer_available_read_space(usart_dev->read_buffer) > 64) {
-            csi_usart_interrupt_on_off(usart_dev->usart_handle, USART_INTR_READ, 1);
+            csi_usart_set_interrupt(usart_dev->usart_handle, USART_INTR_READ, 1);
         }
     }
+
+#endif
 
     if (ret <= 0) {
         usart_dev->stat_rxmit = STAT_XMIT_IDLE;

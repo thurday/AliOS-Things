@@ -29,6 +29,7 @@ extern "C" {
 #define CODE_SYS_ON_ALINK_ONLINE     6
 #define CODE_SYS_ON_ALINK_OFFLINE    7
 #define CODE_SYS_ON_MQTT_READ        8
+#define CODE_SYS_ON_COAP_AUTHED      9
 
 /* WiFi event */
 #define  EV_WIFI                  0x0002
@@ -44,6 +45,21 @@ extern "C" {
 /* user app start 0x1000 - 0x7fff */
 #define EV_USER     0x1000
 
+/** uData event */
+#define EV_UDATA                           0x0004
+#define CODE_UDATA_DEV_READ                1
+#define CODE_UDATA_DEV_IOCTL               2
+#define CODE_UDATA_DEV_OPEN                3
+#define CODE_UDATA_DEV_CLOSE               4
+#define CODE_UDATA_DEV_ENABLE              5
+#define CODE_UDATA_DEV_DISABLE             6
+#define CODE_UDATA_SERVICE_SUBSRIBE        7 /* for external component */
+#define CODE_UDATA_SERVICE_UNSUBSRIBE      8 /* for external component */
+#define CODE_UDATA_SERVICE_PROCESS         9
+#define CODE_UDATA_SERVICE_IOCTL           10
+#define CODE_UDATA_REPORT_PUBLISH          11
+#define CODE_UDATA_DATA_PUBLISH            12
+#define CODE_UDATA_DATA_SUBSCRIB           13
 #endif
 
 typedef struct {

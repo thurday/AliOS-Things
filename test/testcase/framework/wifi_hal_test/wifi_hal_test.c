@@ -25,8 +25,13 @@ static void test_timer_cb(void *arg)
 static void test_timer_case(void)
 {
     int counter = 0, old_counter;
-    hal_timer_t t;
-    hal_timer_init(&t, 50000, 1, 0, test_timer_cb, &counter);
+    timer_dev_t t;
+    t.config.period = 50000;
+    t.config.reload_mode = TIMER_RELOAD_AUTO;
+    t.config.cb = &test_timer_cb;
+    t.config.arg = &counter;
+
+    hal_timer_init(&t);
     aos_msleep(1000);
     YUNIT_ASSERT(counter == 0);
 
@@ -224,8 +229,8 @@ static yunit_test_suite_t suites[] = {
     YUNIT_TEST_SUITE_NULL
 };
 
-void test_hal(void)
+void test_wifi_hal(void)
 {
     yunit_add_test_suites(suites);
 }
-AOS_TESTCASE(test_hal);
+AOS_TESTCASE(test_wifi_hal);

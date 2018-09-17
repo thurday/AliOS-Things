@@ -22,7 +22,7 @@ static char *msg_temp = NULL;
 
 char md5[33];
 
-static char *const get_download_url()
+static char * get_download_url()
 {
     return msg_temp;
 }
@@ -53,7 +53,7 @@ static void free_msg_temp()
     }
 }
 
-char *const ota_get_resp_msg()
+const char * ota_get_resp_msg()
 {
     return msg_temp;
 }
@@ -229,7 +229,17 @@ int8_t ota_do_update_packet(ota_response_params *response_parmas, ota_request_pa
     }
     // memset(url, 0, sizeof url);
     // strncpy(url, response_parmas->download_url, sizeof url);
-    ret = aos_task_new("ota", ota_download_start, 0, 4096);
+#ifdef FOTA_RAM_LIMIT_MODE        
+    platform_destroy_connect();
+#endif  
+    int retry_cnt=0;
+    do{  
+        retry_cnt++;
+        ret = aos_task_new("ota", ota_download_start, 0, 3072);    
+    }while(ret!=0&&retry_cnt<5);
+    if(ret!=0){
+        ota_reboot();
+    }
 #ifdef STM32_USE_SPI_WIFI
     aos_task_exit(0);
 #endif

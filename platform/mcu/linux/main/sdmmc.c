@@ -7,7 +7,8 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <platform.h>
+#include <stdint.h>
+#include <stdio.h>
 #include <hal/soc/sd.h>
 
 #define SD_BLOCK_SIZE 512
@@ -15,7 +16,8 @@
 static int sdmmc_open(int w)
 {
     int fd;
-    char path[] = "./aos_partition_sdcard.bin";
+    char path[64] = {0};
+    snprintf(path, sizeof(path), "./aos_partition_%d_sdcard.bin", getpid());
 
     if (w)
         fd = open(path, O_RDWR);

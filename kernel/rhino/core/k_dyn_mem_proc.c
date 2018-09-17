@@ -9,10 +9,10 @@ void dyn_mem_proc_task(void *arg)
 {
     CPSR_ALLOC();
 
+    size_t      i;
     kstat_t     ret;
     res_free_t *res_free;
     res_free_t  tmp;
-    uint32_t    i;
 
     (void)arg;
 
@@ -43,12 +43,9 @@ void dyn_mem_proc_task(void *arg)
 
 void dyn_mem_proc_task_start(void)
 {
-    ktask_t *dyn_mem_task;
-
-    krhino_task_dyn_create(&dyn_mem_task, "dyn_mem_proc_task", 0,
-                           RHINO_CONFIG_K_DYN_MEM_TASK_PRI,
-                           0, RHINO_CONFIG_K_DYN_TASK_STACK, dyn_mem_proc_task, 1);
-
+    krhino_task_create(&g_dyn_task, "dyn_mem_proc_task", 0, RHINO_CONFIG_K_DYN_MEM_TASK_PRI,
+                        0, g_dyn_task_stack, RHINO_CONFIG_K_DYN_TASK_STACK,
+                        dyn_mem_proc_task, 1);
 }
 #endif
 

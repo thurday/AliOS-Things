@@ -53,7 +53,7 @@
 .type cpu_intrpt_save, %function
 cpu_intrpt_save:
     mfcr    r0, psr
-    psrclr  ie, fe
+    psrclr  ie
     rts
 
 .type cpu_intrpt_restore, %function
@@ -88,7 +88,7 @@ cpu_intrpt_switch:
 
 .type cpu_first_task_start, %function
 cpu_first_task_start:
-    psrclr  ie, fe
+    psrclr  ie
     jbr     __tspend_handler_nosave
 
 /******************************************************************************
@@ -110,12 +110,12 @@ tspend_handler:
     ldw     r1, (r1)
     stw     sp, (r1)
 
-#if (RHINO_CONFIG_TASK_SCHED_STATS > 0)
-    jbsr    krhino_task_sched_stats_get
+#if (YUNOS_CONFIG_TASK_STACK_OVF_CHECK > 0)
+    jbsr    krhino_stack_ovf_check
 #endif
 
-#if (RHINO_CONFIG_TASK_STACK_OVF_CHECK > 0)
-    jbsr    krhino_stack_ovf_check
+#if (YUNOS_CONFIG_TASK_SCHED_STATS > 0)
+    jbsr    krhino_task_sched_stats_get
 #endif
 
 __tspend_handler_nosave:

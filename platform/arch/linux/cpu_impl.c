@@ -74,6 +74,7 @@ static klist_t g_event_list = { &g_event_list, &g_event_list };
 static klist_t g_recycle_list = { &g_recycle_list, &g_recycle_list };
 static dlist_t g_io_list = AOS_DLIST_INIT(g_io_list);
 static int cpu_event_inited;
+extern volatile uint64_t cpu_flag;
 
 typedef struct {
     dlist_t node;
@@ -90,7 +91,6 @@ static pthread_mutex_t g_event_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_t rhino_cpu_thread[RHINO_CONFIG_CPU_NUM];
 static pthread_mutex_t spin_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutexattr_t spin_lock_attr;
-static int lock;
 
 typedef struct {
     klist_t node;
@@ -140,16 +140,14 @@ void *cpu_entry(void *arg)
     cpu_set_t get;
 
     CPU_ZERO(&get);
-
     CPU_ZERO(&mask);
     CPU_SET((int)arg, &mask);
-    printf("cpu num is %d\n", (int)arg);
-
-    sigprocmask(SIG_BLOCK, &cpu_sig_set, NULL);
 
     if (pthread_setaffinity_np(pthread_self(), sizeof(mask), &mask) != 0) {
         printf("Not enough cpu nums!!!\n");
     }
+
+    printf("cpu num is %d\n", (int)arg);
 
     ktask_t    *tcb     = g_preferred_ready_task[(int)arg];
     task_ext_t *tcb_ext = (task_ext_t *)tcb->task_stack;
@@ -209,7 +207,6 @@ sigset_t cpu_intrpt_save(void)
     if (in_signal()) {
         ret = pthread_mutex_lock(&spin_lock);
         assert(ret == 0);
-        lock++;
         return oldset;
     }
 
@@ -223,7 +220,6 @@ sigset_t cpu_intrpt_save(void)
     ret = pthread_mutex_lock(&spin_lock);
     assert(ret == 0);
 
-    lock++;
     return oldset;
 }
 
@@ -232,7 +228,6 @@ void cpu_intrpt_restore(sigset_t cpsr)
     int ret;
 
     if (in_signal()) {
-        lock--;
         ret = pthread_mutex_unlock(&spin_lock);
         assert(ret == 0);
         return;
@@ -248,7 +243,6 @@ void cpu_intrpt_restore(sigset_t cpsr)
         return;
 
 out:
-    lock--;
     ret = pthread_mutex_unlock(&spin_lock);
     assert(ret == 0);
     sigprocmask(SIG_UNBLOCK, &cpu_sig_set, NULL);
@@ -265,32 +259,55 @@ void cpu_task_switch(void)
 
 void cpu_intrpt_switch(void)
 {
+    int ret;
+
     _cpu_task_switch();
     assert(in_signal());
 }
 
-void cpu_first_task_start(void)
+
+void cpu_tmr_sync(void)
 {
     struct sigevent sevp;
     timer_t timerid;
     struct itimerspec ts;
-    int ret = 0;
+    int     i    = 1;
+    uint8_t loop = 1;
+    int     ret  = 0;
+
+    (void)i;
+    (void)loop;
+
 #if (RHINO_CONFIG_CPU_NUM > 1)
-    int i = 0;
-#endif
-
-    ktask_t    *tcb     = g_preferred_ready_task[cpu_cur_get()];
-    task_ext_t *tcb_ext = (task_ext_t *)tcb->task_stack;
-
-    sigprocmask(SIG_BLOCK, &cpu_sig_set, NULL);
-
-    #if (RHINO_CONFIG_CPU_NUM > 1)
     for (i = 1; i < RHINO_CONFIG_CPU_NUM; i++) {
         if (pthread_create(&rhino_cpu_thread[i], NULL, (void *)cpu_entry, (void *)i) != 0) {
             assert(0);
         }
     }
-    #endif
+
+    while (loop) {
+        switch (RHINO_CONFIG_CPU_NUM) {
+            case 2:
+                if (cpu_flag == 2u) {
+                    loop = 0;
+                }
+                break;
+            case 3:
+                if (cpu_flag == 6u) {
+                    loop = 0;
+                }
+                break;
+            case 4:
+                if (cpu_flag == 14u) {
+                    loop = 0;
+                }
+                break;
+            default:
+                printf("too many cpus!!!\n");
+                break;
+        }
+    }
+#endif
 
     memset(&sevp, 0, sizeof(sevp));
     sevp.sigev_notify = SIGEV_SIGNAL | SIGEV_THREAD_ID;
@@ -306,6 +323,12 @@ void cpu_first_task_start(void)
 
     ret = timer_settime(timerid, CLOCK_REALTIME, &ts, NULL);
     assert(ret == 0);
+}
+
+void cpu_first_task_start(void)
+{
+    ktask_t    *tcb     = g_preferred_ready_task[cpu_cur_get()];
+    task_ext_t *tcb_ext = (task_ext_t *)tcb->task_stack;
 
     setcontext(tcb_ext->uctx);
     assert(0);
@@ -432,6 +455,8 @@ void task_proc(void)
 {
     ktask_t *task_tcb;
 
+    sigprocmask(SIG_BLOCK, &cpu_sig_set, NULL);
+
     task_ext_t *tcb_ext = (task_ext_t *)g_active_task[cpu_cur_get()]->task_stack;
 
     LOG("Task '%-20s' running\n", tcb_ext->tcb->task_name);
@@ -487,16 +512,10 @@ static void _cpu_task_switch(void)
 
     #if (RHINO_CONFIG_CPU_NUM > 1)
     swapcontext_safe(from_tcb_ext->uctx, to_tcb_ext->uctx);
+    krhino_spin_lock(&g_sys_lock);
     #else
     swapcontext(from_tcb_ext->uctx, to_tcb_ext->uctx);
     #endif
-
-    ret = pthread_mutex_lock(&spin_lock);
-    assert(ret == 0);
-    lock++;
-
-    /* restore errno */
-    errno = from_tcb_ext->saved_errno;
 }
 
 void cpu_idle_hook(void)

@@ -1,42 +1,31 @@
 /*
- * Copyright (C) 2015-2017 Alibaba Group Holding Limited
+ * Copyright (C) 2017 C-SKY Microsystems Co., Ltd. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <drv_eflash.h>
+
 #include "hal/soc/soc.h"
-#include "mico_rtos.h"
 
-typedef unsigned char  		  UINT8;          /* Unsigned  8 bit quantity        */
-typedef signed   char  		  INT8;           /* Signed    8 bit quantity        */
-typedef unsigned short 		  UINT16;         /* Unsigned 16 bit quantity        */
-typedef signed   short 		  INT16;          /* Signed   16 bit quantity        */
-typedef uint32_t   		      UINT32;         /* Unsigned 32 bit quantity        */
-typedef int32_t   		      INT32;          /* Signed   32 bit quantity        */
-
-#include "flash_pub.h"
-
-extern wdg_dev_t wdg;
-
-#define GLOBAL_INT_DECLARATION()   uint32_t fiq_tmp, irq_tmp
-#define GLOBAL_INT_DISABLE()       do{\
-										fiq_tmp = portDISABLE_FIQ();\
-										irq_tmp = portDISABLE_IRQ();\
-									}while(0)
-
-
-#define GLOBAL_INT_RESTORE()       do{                         \
-                                        if(!fiq_tmp)           \
-                                        {                      \
-                                            portENABLE_FIQ();    \
-                                        }                      \
-                                        if(!irq_tmp)           \
-                                        {                      \
-                                            portENABLE_IRQ();    \
-                                        }                      \
-                                   }while(0)
-
-#define SECTOR_SIZE 0x1000 /* 4 K/sector */
+#define EFLASH_SECTOR_SIZE 512
 
 extern const hal_logic_partition_t hal_partitions[];
+static eflash_handle_t kv_eflash_handle;
+int g_erase_buf[EFLASH_SECTOR_SIZE / 4];
 
 hal_logic_partition_t *hal_flash_get_info(hal_partition_t in_partition)
 {
@@ -49,106 +38,54 @@ hal_logic_partition_t *hal_flash_get_info(hal_partition_t in_partition)
 
 int32_t hal_flash_erase(hal_partition_t in_partition, uint32_t off_set, uint32_t size)
 {
-    uint32_t addr;
-    uint32_t start_addr, end_addr;
-    hal_logic_partition_t *partition_info;
+    int i;
+    uint32_t addr = hal_flash_get_info( in_partition )->partition_start_addr + off_set;
 
-#ifdef CONFIG_AOS_KV_MULTIPTN_MODE
-        if (in_partition == CONFIG_AOS_KV_PTN) {
-            if (off_set >= CONFIG_AOS_KV_PTN_SIZE) {
-                in_partition = CONFIG_AOS_KV_SECOND_PTN;
-                off_set -= CONFIG_AOS_KV_PTN_SIZE;
-            }
-        }
-#endif
+    memset(g_erase_buf, 0xFF, EFLASH_SECTOR_SIZE);
 
-
-    GLOBAL_INT_DECLARATION();
-
-    partition_info = hal_flash_get_info( in_partition );
-
-    if(size + off_set > partition_info->partition_length)
-        return -1;
-
-    start_addr = (partition_info->partition_start_addr + off_set) & (~0xFFF);
-    end_addr = (partition_info->partition_start_addr + off_set + size  - 1) & (~0xFFF);
-
-    for(addr = start_addr; addr <= end_addr; addr += SECTOR_SIZE)
-    {
-        hal_wdg_reload(&wdg);
-        GLOBAL_INT_DISABLE();
-        flash_ctrl(CMD_FLASH_ERASE_SECTOR, &addr);
-        GLOBAL_INT_RESTORE();
+    for (i = 0; i < size / EFLASH_SECTOR_SIZE; i++) {
+        csi_eflash_erase_sector(kv_eflash_handle, addr + EFLASH_SECTOR_SIZE * i);
+        csi_eflash_program(kv_eflash_handle, addr + EFLASH_SECTOR_SIZE * i, g_erase_buf, EFLASH_SECTOR_SIZE);
     }
-    hal_wdg_reload(&wdg);
-    
+
     return 0;
 }
-                        
+
 int32_t hal_flash_write(hal_partition_t in_partition, uint32_t *off_set, const void *in_buf , uint32_t in_buf_len)
 {
-    uint32_t start_addr;
-    hal_logic_partition_t *partition_info;
+    uint32_t addr = hal_flash_get_info( in_partition )->partition_start_addr + *off_set;
 
-#ifdef CONFIG_AOS_KV_MULTIPTN_MODE
-        if (in_partition == CONFIG_AOS_KV_PTN) {
-            if ((*off_set) >= CONFIG_AOS_KV_PTN_SIZE) {
-                in_partition = CONFIG_AOS_KV_SECOND_PTN;
-                *off_set = (*off_set) - CONFIG_AOS_KV_PTN_SIZE;
-            }
-        }
-#endif
+    memset(g_erase_buf, 0xFF, EFLASH_SECTOR_SIZE);
 
-    GLOBAL_INT_DECLARATION();
+    if ((addr + in_buf_len) <= ((addr & 0xFFFFFE00) + EFLASH_SECTOR_SIZE)) {
+        csi_eflash_read(kv_eflash_handle, addr & 0xFFFFFE00, g_erase_buf, EFLASH_SECTOR_SIZE);
+        memcpy((void *)((uint32_t)g_erase_buf + addr % EFLASH_SECTOR_SIZE), in_buf, in_buf_len);
+        csi_eflash_erase_sector(kv_eflash_handle, addr & 0xFFFFFE00);
+        csi_eflash_program(kv_eflash_handle, addr & 0xFFFFFE00, g_erase_buf, EFLASH_SECTOR_SIZE);
+    } else {
+        uint32_t remain_len = addr + in_buf_len - ((addr & 0xFFFFFE00) + EFLASH_SECTOR_SIZE);
+        uint32_t len = in_buf_len - remain_len;
 
-    partition_info = hal_flash_get_info( in_partition );
+        csi_eflash_read(kv_eflash_handle, addr & 0xFFFFFE00, g_erase_buf, EFLASH_SECTOR_SIZE);
+        memcpy((void *)((uint32_t)g_erase_buf + addr % EFLASH_SECTOR_SIZE), in_buf, len);
+        csi_eflash_erase_sector(kv_eflash_handle, addr & 0xFFFFFE00);
+        csi_eflash_program(kv_eflash_handle, addr & 0xFFFFFE00, g_erase_buf, EFLASH_SECTOR_SIZE);
 
-    if(off_set == NULL || in_buf == NULL || *off_set + in_buf_len > partition_info->partition_length)
-        return -1;
-
-    start_addr = partition_info->partition_start_addr + *off_set;
-
-    hal_wdg_reload(&wdg);
-    GLOBAL_INT_DISABLE();
-    flash_write(in_buf, in_buf_len, start_addr);
-    GLOBAL_INT_RESTORE();
-    hal_wdg_reload(&wdg);
-
-    *off_set += in_buf_len;
+        memset(g_erase_buf, 0xFF, EFLASH_SECTOR_SIZE);
+        csi_eflash_read(kv_eflash_handle, (addr & 0xFFFFFE00) + EFLASH_SECTOR_SIZE, g_erase_buf, EFLASH_SECTOR_SIZE);
+        memcpy((void *)g_erase_buf, (void *)((uint32_t)in_buf + len), remain_len);
+        csi_eflash_erase_sector(kv_eflash_handle, (addr & 0xFFFFFE00) + EFLASH_SECTOR_SIZE);
+        csi_eflash_program(kv_eflash_handle, (addr & 0xFFFFFE00) + EFLASH_SECTOR_SIZE, g_erase_buf, EFLASH_SECTOR_SIZE);
+    }
 
     return 0;
 }
 
 int32_t hal_flash_read(hal_partition_t in_partition, uint32_t *off_set, void *out_buf, uint32_t out_buf_len)
 {
-    uint32_t start_addr;
-    hal_logic_partition_t *partition_info;
+    uint32_t addr = hal_flash_get_info( in_partition )->partition_start_addr + *off_set;
 
-#ifdef CONFIG_AOS_KV_MULTIPTN_MODE
-    if (in_partition == CONFIG_AOS_KV_PTN) {
-        if ((*off_set) >=  CONFIG_AOS_KV_PTN_SIZE) {
-            in_partition = CONFIG_AOS_KV_SECOND_PTN;
-            *off_set = (*off_set) - CONFIG_AOS_KV_PTN_SIZE;
-        }
-    }
-#endif
-
-    GLOBAL_INT_DECLARATION();
-
-    partition_info = hal_flash_get_info( in_partition );
-
-    if(off_set == NULL || out_buf == NULL || *off_set + out_buf_len > partition_info->partition_length)
-        return -1;
-
-    start_addr = partition_info->partition_start_addr + *off_set;
-
-    hal_wdg_reload(&wdg);
-    GLOBAL_INT_DISABLE();
-    flash_read(out_buf, out_buf_len, start_addr);
-    GLOBAL_INT_RESTORE();
-    hal_wdg_reload(&wdg);
-
-    *off_set += out_buf_len;
+    csi_eflash_read(kv_eflash_handle, addr, out_buf, out_buf_len);
 
     return 0;
 }
@@ -161,4 +98,9 @@ int32_t hal_flash_enable_secure(hal_partition_t partition, uint32_t off_set, uin
 int32_t hal_flash_dis_secure(hal_partition_t partition, uint32_t off_set, uint32_t size)
 {
     return 0;
+}
+
+void hal_flash_init(void)
+{
+    kv_eflash_handle = csi_eflash_initialize(0, NULL);
 }

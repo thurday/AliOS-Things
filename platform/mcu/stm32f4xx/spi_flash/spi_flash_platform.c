@@ -1,24 +1,9 @@
-/**
- ******************************************************************************
- * @file    spi_flash_platform.c
- * @author  William Xu
- * @version V1.0.0
- * @date    16-Sep-2014
- * @brief   This file provides all the headers of flash operation functions.
- ******************************************************************************
- *  UNPUBLISHED PROPRIETARY SOURCE CODE
- *  Copyright (c) 2016 MXCHIP Inc.
- *
- *  The contents of this file may not be disclosed to third parties, copied or
- *  duplicated in any form, in whole or in part, without the prior written
- *  permission of MXCHIP Corporation.
- ******************************************************************************
- */
 
 #include "spi_flash_platform_interface.h"
 #include "mico_platform.h"
 
 #if defined ( USE_MICO_SPI_FLASH )
+extern const platforom_spi_device_t mico_spi_flash;
 
 int sflash_platform_init ( /*@shared@*/ void* peripheral_id, /*@out@*/ void** platform_peripheral_out )
 {
@@ -42,7 +27,7 @@ extern int sflash_platform_send_recv ( const void* platform_peripheral, /*@in@*/
 {
     UNUSED_PARAMETER( platform_peripheral );
 
-    if ( kNoErr != MicoSpiTransfer( &mico_spi_flash, (mico_spi_message_segment_t*) segments, (uint16_t) num_segments ) )
+    if ( kNoErr != MicoSpiTransfer( &mico_spi_flash, (platform_spi_message_segment_t*) segments, (uint16_t) num_segments ) )
     {
         return -1;
     }
