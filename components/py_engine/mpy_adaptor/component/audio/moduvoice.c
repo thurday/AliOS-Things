@@ -6,8 +6,8 @@
 #include "py/obj.h"
 #include "py/runtime.h"
 #include "py/builtin.h"
-#include "k_api.h"
-#include "HaasLog.h"
+
+#include "ulog/ulog.h"
 
 extern const mp_obj_type_t uvoice_snd_type;
 extern const mp_obj_type_t uvoice_player_type;

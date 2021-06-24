@@ -6,8 +6,8 @@
 #include "py/obj.h"
 #include "py/runtime.h"
 #include "py/builtin.h"
-#include "k_api.h"
-#include "HaasLog.h"
+
+#include "ulog/ulog.h"
 
 extern const mp_obj_type_t mqtt_client_type;
 

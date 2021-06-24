@@ -2,10 +2,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "HaasLog.h"
+#include "ulog/ulog.h"
 #include "py/builtin.h"
 #include "py/obj.h"
 #include "py/runtime.h"
+
+#define LOG_TAG "UVOICE_SND"
 
 extern int audio_install_codec_driver();
 
@@ -39,7 +41,7 @@ STATIC mp_obj_t a2sa_uvoice_init(void)
 {
     int ret = uvoice_init();
     if (ret != 0) {
-        LOG_E("Failed to init uvoice, ret=%d", ret);
+        LOGE(LOG_TAG, "Failed to init uvoice, ret=%d", ret);
     } else {
         g_is_uvoice_inited = true;
     }
@@ -51,7 +53,7 @@ STATIC mp_obj_t a2sa_uvoice_deinit(void)
 {
     int ret = uvoice_free();
     if (ret != 0) {
-        LOG_E("Failed to deinit uvoice, ret=%d", ret);
+        LOGE(LOG_TAG, "Failed to deinit uvoice, ret=%d", ret);
     } else {
         g_is_uvoice_inited = false;
     }

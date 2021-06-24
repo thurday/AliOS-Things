@@ -1,18 +1,20 @@
 
 #include "WrapperIHaasDataInput.h"
 #include "IHaasDataInput.h"
-#include "HaasLog.h"
+#include "ulog/ulog.h"
 #include "HaasErrno.h"
 #include "IHaasDataInput.h"
 
+#define LOG_TAG "WRAPPER_DATAINPUT"
+
 void* DataInputCreateInstance(DataInputType_t type)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasDataInput* mIHaasDataInput =  IHaasDataInputInstance(type);
     if (mIHaasDataInput == NULL)
     {
-        LOG_D("IHaasDataInputInstance failed %s;\n", __func__);
+        LOGD(LOG_TAG, "IHaasDataInputInstance failed %s;\n", __func__);
         return NULL;
     }
     return (void*)mIHaasDataInput;
@@ -23,12 +25,12 @@ void* DataInputCreateInstance(DataInputType_t type)
 
 void DataInputDestoryInstance(void* instance)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasDataInput* mIHaasDataInput = (IHaasDataInput*)instance;
     if (mIHaasDataInput == NULL)
     {
-        LOG_D("mIHaasDataInput is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasDataInput is NULL %s;\n", __func__);
         return;
     }
     delete mIHaasDataInput;
@@ -37,12 +39,12 @@ void DataInputDestoryInstance(void* instance)
 
 int DataInputOpen(void* instance, char* filename)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasDataInput* mIHaasDataInput = (IHaasDataInput*)instance;
     if (mIHaasDataInput == NULL)
     {
-        LOG_D("mIHaasDataInput is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasDataInput is NULL %s;\n", __func__);
         return -1;
     }
     int ret = mIHaasDataInput->Open(filename);
@@ -54,12 +56,12 @@ int DataInputOpen(void* instance, char* filename)
 
 int DataInputOpen2(void* instance, int cameraNum)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasDataInput* mIHaasDataInput = (IHaasDataInput*)instance;
     if (mIHaasDataInput == NULL)
     {
-        LOG_D("mIHaasDataInput is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasDataInput is NULL %s;\n", __func__);
         return -1;
     }
     int ret = mIHaasDataInput->Open(cameraNum);
@@ -71,12 +73,12 @@ int DataInputOpen2(void* instance, int cameraNum)
 
 int DataInputClose(void* instance)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasDataInput* mIHaasDataInput = (IHaasDataInput*)instance;
     if (mIHaasDataInput == NULL)
     {
-        LOG_D("mIHaasDataInput is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasDataInput is NULL %s;\n", __func__);
         return -1;
     }
     int ret = mIHaasDataInput->Close();
@@ -88,13 +90,13 @@ int DataInputClose(void* instance)
 
 bool DataInputCheckDataReady(void* instance)
 {
-    LOG_D("entern %s; intance = %p;\n", __func__, instance);
+    LOGD(LOG_TAG, "entern %s; intance = %p;\n", __func__, instance);
 #if 0
     IHaasDataInput* mIHaasDataInput = (IHaasDataInput*)instance;
-    LOG_D("entern %s; mIHaasDataInput = %p;\n", __func__, mIHaasDataInput);
+    LOGD(LOG_TAG, "entern %s; mIHaasDataInput = %p;\n", __func__, mIHaasDataInput);
     if (mIHaasDataInput == NULL)
     {
-        LOG_D("mIHaasDataInput is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasDataInput is NULL %s;\n", __func__);
         return false;
     }
     bool ret = mIHaasDataInput->CheckDataReady();
@@ -106,12 +108,12 @@ bool DataInputCheckDataReady(void* instance)
 
 int DataInputRequestData(void* instance, ImageBuffer_t** image, int32_t timeout)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasDataInput* mIHaasDataInput = (IHaasDataInput*)instance;
     if (mIHaasDataInput == NULL)
     {
-        LOG_D("mIHaasDataInput is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasDataInput is NULL %s;\n", __func__);
         return -1;
     }
     int ret = mIHaasDataInput->RequestData(image, timeout);
@@ -123,12 +125,12 @@ int DataInputRequestData(void* instance, ImageBuffer_t** image, int32_t timeout)
 
 int DataInputReleaseData(void* instance, ImageBuffer_t* image)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasDataInput* mIHaasDataInput = (IHaasDataInput*)instance;
     if (mIHaasDataInput == NULL)
     {
-        LOG_D("mIHaasDataInput is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasDataInput is NULL %s;\n", __func__);
         return -1;
     }
     int ret = mIHaasDataInput->ReleaseData(image);

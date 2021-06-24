@@ -6,18 +6,20 @@
 #include "py/obj.h"
 #include "py/runtime.h"
 #include "py/builtin.h"
-#include "k_api.h"
-#include "HaasLog.h"
+
+#include "ulog/ulog.h"
 #include "oss_app.h"
+
+#define LOG_TAG "MOD_OSS"
 
 STATIC mp_obj_t obj_uploadFile(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     char * url = NULL;
     if (n_args < 5)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
 
@@ -26,11 +28,11 @@ STATIC mp_obj_t obj_uploadFile(size_t n_args, const mp_obj_t *args)
     char *endPoint = (char *)mp_obj_str_get_str(args[2]);
     char *bucketName = (char *)mp_obj_str_get_str(args[3]);
     char *filePath = (char *)mp_obj_str_get_str(args[4]);
-    LOG_D("key = %s;\n", key);
-    LOG_D("secret = %s;\n", secret);
-    LOG_D("endPoint = %s;\n", endPoint);
-    LOG_D("bucketName = %s;\n", bucketName);
-    LOG_D("filePath = %s;\n", filePath);
+    LOGD(LOG_TAG, "key = %s;\n", key);
+    LOGD(LOG_TAG, "secret = %s;\n", secret);
+    LOGD(LOG_TAG, "endPoint = %s;\n", endPoint);
+    LOGD(LOG_TAG, "bucketName = %s;\n", bucketName);
+    LOGD(LOG_TAG, "filePath = %s;\n", filePath);
     url = oss_upload_local_file(key, secret, endPoint, bucketName, filePath);
 
     return mp_obj_new_strn(url);
@@ -39,12 +41,12 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(oss_obj_uploadFile, 5, obj_uploadFile);
 
 STATIC mp_obj_t obj_uploadContent(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     char * url = NULL;
     if (n_args < 5)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
 
@@ -53,11 +55,11 @@ STATIC mp_obj_t obj_uploadContent(size_t n_args, const mp_obj_t *args)
     char *endPoint = (char *)mp_obj_str_get_str(args[2]);
     char *bucketName = (char *)mp_obj_str_get_str(args[3]);
     char *fileContent = (char *)mp_obj_str_get_str(args[4]);
-    LOG_D("key = %s;\n", key);
-    LOG_D("secret = %s;\n", secret);
-    LOG_D("endPoint = %s;\n", endPoint);
-    LOG_D("bucketName = %s;\n", bucketName);
-    LOG_D("fileContent = %s;\n", fileContent);
+    LOGD(LOG_TAG, "key = %s;\n", key);
+    LOGD(LOG_TAG, "secret = %s;\n", secret);
+    LOGD(LOG_TAG, "endPoint = %s;\n", endPoint);
+    LOGD(LOG_TAG, "bucketName = %s;\n", bucketName);
+    LOGD(LOG_TAG, "fileContent = %s;\n", fileContent);
     url = oss_upload_local_content(key, secret, endPoint, bucketName, fileContent);
 
     return mp_obj_new_strn(url);

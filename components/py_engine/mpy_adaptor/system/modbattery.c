@@ -6,19 +6,21 @@
 #include "py/obj.h"
 #include "py/runtime.h"
 #include "py/builtin.h"
-#include "k_api.h"
-#include "HaasLog.h"
+
+#include "ulog/ulog.h"
+
+#define LOG_TAG "MOD_BATTERY"
 
 STATIC mp_obj_t obj_open(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     if (n_args < 1)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
-    LOG_D("%s:out\n", __func__);
+    LOGD(LOG_TAG, "%s:out\n", __func__);
 
     return mp_const_none;
 }
@@ -26,14 +28,14 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(battery_obj_open, 1, obj_open);
 
 STATIC mp_obj_t obj_close(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     if (n_args < 1)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
-    LOG_D("%s:out\n", __func__);
+    LOGD(LOG_TAG, "%s:out\n", __func__);
 
     return mp_const_none;
 }
@@ -41,20 +43,20 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(battery_obj_close, 1, obj_close);
 
 STATIC mp_obj_t obj_getConnectState(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     int state;
     if (n_args < 1)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
 
     //if (amp_battery_connect_state_get(&state))
     {
-        LOG_E("get battery connect state fail\n");
+        LOGE(LOG_TAG, "get battery connect state fail\n");
     }
-    LOG_D("%s: state = %d;\n", __func__, state);
+    LOGD(LOG_TAG, "%s: state = %d;\n", __func__, state);
 
     return MP_ROM_INT(state);
 }
@@ -62,21 +64,21 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(battery_obj_getConnectState, 1, obj_getConnec
 
 STATIC mp_obj_t obj_getVoltage(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     int voltage;
 
     if (n_args < 1)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
 
     //if (amp_battery_voltage_get(&voltage))
     {
-        LOG_E("get battery connect voltage fail\n");
+        LOGE(LOG_TAG, "get battery connect voltage fail\n");
     }
-    LOG_D("%s: voltage = %d;\n", __func__, voltage);
+    LOGD(LOG_TAG, "%s: voltage = %d;\n", __func__, voltage);
 
     return MP_ROM_INT(voltage);
 }
@@ -84,21 +86,21 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(battery_obj_getVoltage, 1, obj_getVoltage);
 
 STATIC mp_obj_t obj_getLevel(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     int level;
 
     if (n_args < 1)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
 
     //if (amp_battery_level_get(&level))
     {
-        LOG_E("get battery connect level fail\n");
+        LOGE(LOG_TAG, "get battery connect level fail\n");
     }
-    LOG_D("%s: level = %d;\n", __func__, level);
+    LOGD(LOG_TAG, "%s: level = %d;\n", __func__, level);
 
     return MP_ROM_INT(level);
 }
@@ -106,21 +108,21 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(battery_obj_getLevel, 1, obj_getLevel);
 
 STATIC mp_obj_t obj_getTemperature(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     int temperature;
 
     if (n_args < 1)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
 
     //if (amp_battery_temperature_get(&temperature))
     {
-        LOG_E("get battery connect temperature fail\n");
+        LOGE(LOG_TAG, "get battery connect temperature fail\n");
     }
-    LOG_D("%s: temperature = %d;\n", __func__, temperature);
+    LOGD(LOG_TAG, "%s: temperature = %d;\n", __func__, temperature);
 
     return MP_ROM_INT(temperature);
 }

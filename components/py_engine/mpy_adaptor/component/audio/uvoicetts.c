@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "HaasLog.h"
-#include "k_api.h"
+#include "ulog/ulog.h"
+
 #include "py/builtin.h"
 #include "py/mperrno.h"
 #include "py/obj.h"
@@ -15,6 +15,8 @@
 #include "uvoice_init.h"
 #include "uvoice_tts.h"
 #include "utility.h"
+
+#define LOG_TAG "UVOICE_TTS"
 
 #define TTS_CHECK_PARAMS()                                               \
     uvocie_tts_obj_t *self = (uvocie_tts_obj_t *)MP_OBJ_TO_PTR(self_in); \
@@ -118,7 +120,7 @@ STATIC mp_obj_t uvoice_tts_init(mp_obj_t self_in, mp_obj_t aicloud_type_in, mp_o
     config.pitch_rate = get_int_from_dict(config_in, "pitch_rate");
     config.text_encode_type = (tts_encode_type_e)get_int_from_dict(config_in, "text_encode_type");
 
-    LOG_D("app_key=%s, token=%s, format=%d, sample_rate=%d, voice=%s, volume=%d, speech_rate=%d, pitch_rate=%d, text_encode_type=%d\n",
+    LOGD(LOG_TAG, "app_key=%s, token=%s, format=%d, sample_rate=%d, voice=%s, volume=%d, speech_rate=%d, pitch_rate=%d, text_encode_type=%d\n",
           config.app_key, config.token, config.format, config.sample_rate, config.voice,
           config.volume, config.speech_rate, config.pitch_rate, config.text_encode_type);
 
@@ -136,7 +138,7 @@ static tts_recv_callback_t recv_cb = {
 STATIC mp_obj_t uvoice_tts_request(size_t n_args, const mp_obj_t *args)
 {
     if (n_args < 3) {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
 
@@ -146,7 +148,7 @@ STATIC mp_obj_t uvoice_tts_request(size_t n_args, const mp_obj_t *args)
     char *text = (char *)mp_obj_str_get_str(args[1]);
     int recv_type = mp_obj_get_int(args[2]);
 
-    LOG_D("text=%s, recv_type=%d", text, recv_type);
+    LOGD(LOG_TAG, "text=%s, recv_type=%d", text, recv_type);
 
     mp_int_t status = self->tts_obj->tts_request(text, recv_type, &recv_cb);
     return mp_obj_new_int(status);
@@ -166,13 +168,13 @@ STATIC mp_obj_t uvoice_create(mp_obj_t self_in)
 {
     uvocie_tts_obj_t *self = (uvocie_tts_obj_t *)MP_OBJ_TO_PTR(self_in);
     if (self == NULL) {
-        LOG_E("uvocie_tts_obj_t NULL");
+        LOGE(LOG_TAG, "uvocie_tts_obj_t NULL");
         return mp_const_none;
     }
 
     self->tts_obj = uvoice_tts_create();
     if (self->tts_obj == NULL) {
-        LOG_E("create tts failed !\n");
+        LOGE(LOG_TAG, "create tts failed !\n");
     }
 
     return mp_const_none;
@@ -197,7 +199,7 @@ STATIC mp_obj_t uvoice_tts_set_callback(mp_obj_t self_in, mp_obj_t type_in, mp_o
     TTS_CHECK_PARAMS();
 
     if(mp_obj_is_fun(callback_fun) == false) {
-        LOG_E("Obj is not function\n");
+        LOGE(LOG_TAG, "Obj is not function\n");
         return mp_const_none;
     }
 
@@ -220,7 +222,7 @@ STATIC mp_obj_t uvoice_tts_cb_test(mp_obj_t self_in, mp_obj_t type_in)
     TTS_CHECK_PARAMS();
 
     int type = mp_obj_get_int(type_in);
-    LOG_D("type=%d", type);
+    LOGD(LOG_TAG, "type=%d", type);
 
     if (type == TTS_RECV_CB_URL)
     {

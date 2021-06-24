@@ -1,5 +1,5 @@
 #include "HaasImageUtils.h"
-#include "HaasLog.h"
+#include "ulog/ulog.h"
 #include "HaasErrno.h"
 
 uint32_t ImageUtils::GetSize(PixelFmt_t format, uint32_t width, uint32_t height)

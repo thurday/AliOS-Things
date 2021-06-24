@@ -13,9 +13,10 @@
 #include <fcntl.h>
 
 #include "board_mgr.h"
+#include "py_config.h"
 #include "cJSON.h"
 
-#include "HaasLog.h"
+#include "ulog/ulog.h"
 #include "aos/list.h"
 #include "aos_hal_gpio.h"
 #include "aos_hal_uart.h"
@@ -24,8 +25,7 @@
 #include "aos_hal_spi.h"
 #include "aos_hal_adc.h"
 
-#define MOD_STR "BOARD_MGR"
-#define DRIVER_DIR JSE_FS_ROOT_DIR "/drivers/"
+#define LOG_TAG "BOARD_MGR"
 
 #define DRIVER_NAME "driver.json"
 
@@ -108,7 +108,7 @@ static int8_t board_parse_gpio(cJSON *gpio, char *id)
     while (index < size)
     {
         if ((priv = (gpio_params_t *)aos_calloc(1, sizeof(gpio_params_t))) == NULL) {
-            LOG_E("malloc failed");
+            LOGE(LOG_TAG, "malloc failed");
             return (-1);
         }
         item = gpio;
@@ -324,7 +324,7 @@ static int8_t board_parse_uart(cJSON *uart, char *id)
         char *uart_id = strdup(id);
         *new_uart = device;
         ret = board_add_new_item(MODULE_UART, uart_id, new_uart);
-        LOG_D("*** add item: %s", uart_id);
+        LOGD(LOG_TAG, "*** add item: %s", uart_id);
         if (0 == ret)
         {
             continue;
@@ -707,27 +707,27 @@ static char *board_get_json_buff(const char *json_path)
 
     json_fd = aos_open(json_path, O_RDONLY);
     if (json_fd < 0) {
-        LOG_D("fopen fail");
+        LOGD(LOG_TAG, "fopen fail");
         return (NULL);
     }
-    // LOG_D("jse_lseek");
+    // LOGD(LOG_TAG, "jse_lseek");
     len = aos_lseek(json_fd, 0, SEEK_END);
     if (len < 0) {
-        LOG_D("seek fail");
+        LOGD(LOG_TAG, "seek fail");
         return (NULL);
     }
-    // LOG_D("jse_lseek, len: %d", len);
+    // LOGD(LOG_TAG, "jse_lseek, len: %d", len);
     json_data = aos_calloc(1, sizeof(char) * (len + 1));
     if (NULL == json_data)
     {
         aos_close(json_fd);
-        LOG_D("jse_close");
+        LOGD(LOG_TAG, "jse_close");
         return (NULL);
     }
     aos_lseek(json_fd, 0, SEEK_SET);
-    // LOG_D("jse_read");
+    // LOGD(LOG_TAG, "jse_read");
     aos_read(json_fd, json_data, len);
-    // LOG_D("jse_read, data: %s", json_data);
+    // LOGD(LOG_TAG, "jse_read, data: %s", json_data);
     aos_close(json_fd);
     return json_data;
 }
@@ -773,53 +773,52 @@ static int32_t board_parse_json_buff(const char *json_buff)
     if((debug = cJSON_GetObjectItem(root, APP_CONFIG_DEBUG)) != NULL) {
         /* parsing debugLevel configuration */
         if (!cJSON_IsString(debug)) {
-            LOG_E("debugLevel not string");
+            LOGE(LOG_TAG, "debugLevel not string");
             goto parse_end;
         }
 
-        LOG_D("get debugLevel:%s", debug->valuestring);
+        LOGD(LOG_TAG, "get debugLevel:%s\n", debug->valuestring);
         if(strcmp(debug->valuestring, "DEBUG") == 0) {
-            //aos_set_log_level(LOG_DEBUG);
+            aos_set_log_level(LOG_DEBUG);
         }
         else if(strcmp(debug->valuestring, "INFO") == 0) {
-            //aos_set_log_level(LOG_INFO);
+            aos_set_log_level(LOG_INFO);
         }
         else if(strcmp(debug->valuestring, "WARN") == 0) {
-            //aos_set_log_level(LOG_WARNING);
+            aos_set_log_level(LOG_WARNING);
 
         }
         else if(strcmp(debug->valuestring, "ERROR") == 0) {
-            //aos_set_log_level(LOG_ERR);
-
+            aos_set_log_level(LOG_ERR);
         }
         else if(strcmp(debug->valuestring, "FATAL") == 0) {
-           // aos_set_log_level(LOG_CRIT);
+            aos_set_log_level(LOG_CRIT);
         }
         else {
-            LOG_D("debugLevel error, set to default: 'ERROR'");
-            //aos_set_log_level(LOG_ERR);
+            LOGD(LOG_TAG, "debugLevel error, set to default: 'ERROR'");
+            aos_set_log_level(LOG_ERR);
         }
     }
     else {
-        LOG_D("No debugLevel configuration in app.json, set to default: 'ERROR'");
+        LOGD(LOG_TAG, "No debugLevel configuration in app.json, set to default: 'ERROR'");
     }
 
     /* page configuration */
     if((pages = cJSON_GetObjectItem(root, APP_CONFIG_PAGES)) != NULL) {
         /* parsing io configuration */
         if(!cJSON_IsArray(pages)) {
-            LOG_E("Pages entries need array");
+            LOGE(LOG_TAG, "Pages entries need array");
             goto parse_end;
         }
 
         dlist_init(&g_pages_list);
         cJSON_ArrayForEach(page, pages) {
             if (!cJSON_IsString(page)) {
-                LOG_E("page not string");
+                LOGE(LOG_TAG, "page not string");
                 goto parse_end;
             }
 
-            LOG_D("get page:%s", page->valuestring);
+            LOGD(LOG_TAG, "get page:%s", page->valuestring);
 
             /* add page to dlink */
             page_entry_t *page_entry = aos_malloc(sizeof(page_entry_t));
@@ -828,29 +827,29 @@ static int32_t board_parse_json_buff(const char *json_buff)
         }
     }
     else {
-        LOG_D("No pages configuration in app.json");
+        LOGD(LOG_TAG, "No pages configuration in app.json");
     }
 
     /* repl configuration */
     if((repl = cJSON_GetObjectItem(root, APP_CONFIG_REPL)) != NULL) {
         /* parsing debugLevel configuration */
         if (!cJSON_IsString(repl)) {
-            LOG_E("repl not string");
+            LOGE(LOG_TAG, "repl not string");
             goto parse_end;
         }
 
-        LOG_D("get app repl config is:%s", repl->valuestring);
+        LOGD(LOG_TAG, "get app repl config is:%s", repl->valuestring);
         if (strcmp(repl->valuestring, "disable") == 0) {
             py_repl_config = 0;
         } else if (strcmp(repl->valuestring, "enable") == 0) {
             py_repl_config = 1;
         } else {
-            LOG_D("repl configuration is wrong, set to default: 'enable'");
+            LOGD(LOG_TAG, "repl configuration is wrong, set to default: 'enable'");
             py_repl_config = 1;
         }
     }
     else {
-        LOG_D("No repl configuration in app.json, set to default: 'enable'");
+        LOGD(LOG_TAG, "No repl configuration in app.json, set to default: 'enable'");
     }
 
     /* net configuration */
@@ -877,7 +876,7 @@ static int32_t board_parse_json_buff(const char *json_buff)
         }
     }
     else {
-        LOG_E("No io configuration in app.json");
+        LOGE(LOG_TAG, "No io configuration in app.json");
     }
 
     cJSON_Delete(root);
@@ -1050,33 +1049,53 @@ int32_t py_board_mgr_init()
     char *json = NULL;
     int json_fd = -1;
     char *board_json_path = NULL;
+    char *sdcard_root_path = "/sdcard/board.json";
+    char *data_root_path = MP_FS_ROOT_DIR"/board.json";
     char *sdcard_board_json_path = "/sdcard/python-apps/driver/board.json";
-    char *data_board_json_path = "/data/python-apps/driver/board.json";
+    char *data_board_json_path = MP_FS_ROOT_DIR"/python-apps/driver/board.json";
 
-    if (board_init_flag != false)
-    {
-        LOG_D("board config haas been loaded");
+    if (board_init_flag != false) {
+        LOGD(LOG_TAG, "board config haas been loaded");
         return 0;
     }
 
     board_init_flag = true;
     memset(&g_board_mgr, 0x00, sizeof(g_board_mgr));
-    json_fd = aos_open(sdcard_board_json_path, O_RDONLY);
-    if (json_fd < 0) {
-        board_json_path = data_board_json_path;
-    }
-    else
-    {
+    json_fd = aos_open(sdcard_root_path, O_RDONLY);
+    if (json_fd >= 0) {
         aos_close(json_fd);
-        board_json_path = sdcard_board_json_path;
+        board_json_path = sdcard_root_path;
     }
 
-    LOG_D("board_json_path = %s;", board_json_path);
+    if (board_json_path == NULL)
+    {
+        json_fd = aos_open(data_root_path, O_RDONLY);
+        if (json_fd >= 0) {
+            aos_close(json_fd);
+            board_json_path = data_root_path;
+        }
+    }
+
+    if (board_json_path == NULL)
+    {
+        json_fd = aos_open(sdcard_board_json_path, O_RDONLY);
+        if (json_fd >= 0) {
+            aos_close(json_fd);
+            board_json_path = sdcard_board_json_path;
+        }
+    }
+
+    if (board_json_path == NULL)
+    {
+        board_json_path = data_board_json_path;
+    }
+
+    LOGD(LOG_TAG, "board_json_path = %s;\n", board_json_path);
     json = board_get_json_buff(board_json_path);
 
     if (NULL == json)
     {
-        LOG_D("default board config is null");
+        LOGD(LOG_TAG, "default board config is null");
         return ret;
     }
     // return 0;
@@ -1131,7 +1150,7 @@ int8_t py_board_load_drivers(const char *driver)
     memmove(new_driver + (index - driver + 1), DRIVER_NAME,
             strlen(DRIVER_NAME));
 
-    LOG_D("%s%d, new_driver = %s ", __FUNCTION__, __LINE__,
+    LOGD(LOG_TAG, "%s%d, new_driver = %s ", __FUNCTION__, __LINE__,
               new_driver);
 
     json = board_get_json_buff(new_driver);

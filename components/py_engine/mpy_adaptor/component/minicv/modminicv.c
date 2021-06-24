@@ -5,7 +5,7 @@
 #include "py/obj.h"
 #include "py/runtime.h"
 #include "py/builtin.h"
-#include "HaasLog.h"
+#include "ulog/ulog.h"
 
 extern const mp_obj_type_t minicv_datainput_type;
 extern const mp_obj_type_t minicv_imagecodec_type;

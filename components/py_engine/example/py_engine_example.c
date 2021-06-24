@@ -8,33 +8,32 @@
 #include <aos/kernel.h>
 #include "aos/init.h"
 #include "board.h"
-#include <k_api.h>
+#include "ulog/ulog.h"
+
 #include "mpy_main.h"
 #if AOS_COMP_CLI
 #include "aos/cli.h"
 #endif
 #include "miniunz.h"
-
-typedef struct {
-    int argc;
-    char **argv;
-} mpy_thread_args;
+#include "py_engine_example.h"
 
 static mpy_thread_args *alloc_mpy_thread_args(int argc, char **argv)
 {
-    if (argv == NULL) {
-        printf("%s:argc is illegal\n", __func__);
-        return NULL;
-    }
-
-    mpy_thread_args *temp_args = (mpy_thread_args *)malloc(sizeof(mpy_thread_args));
+    mpy_thread_args *temp_args = (mpy_thread_args *)calloc(1, sizeof(mpy_thread_args));
     if (temp_args == NULL) {
         printf("%s;malloc mpy_thread_args failed\n", __func__);
         return NULL;
     }
 
-    temp_args->argc = argc;
-    temp_args->argv = (char **)malloc(sizeof(char *) * argc);
+    if (argc == 0) {
+        temp_args->is_bootup = true;
+        temp_args->argc = 2;
+    } else {
+        temp_args->is_bootup = false;
+        temp_args->argc = argc;
+    }
+
+    temp_args->argv = (char **)calloc(1, sizeof(char *) * temp_args->argc);
     if (temp_args->argv == NULL) {
         printf("%s:temp_args->argv alloc memory failed\n", __func__);
         free(temp_args);
@@ -66,28 +65,27 @@ static int free_mpy_thread_args(mpy_thread_args *args)
     return 0;
 }
 
-static int python_entry(void *p)
+static void python_entry(void *p)
 {
-    tick_t   sleep_time;
-    sleep_time = krhino_ms_to_ticks(10); /*  10ms to ticks */
-    krhino_task_sleep(sleep_time); /*  sleep 10ms */
-
     mpy_thread_args *args = (mpy_thread_args *)p;
     if (args == NULL) {
         printf("%s:args is illegal\n", __func__);
-        return -1;
+        return;
     }
 
-    mpy_init();
+    aos_set_log_level(AOS_LL_ERROR);
+
+    mpy_init(args);
     mpy_run(args->argc, args->argv);
     mpy_deinit();
-    free_mpy_thread_args(args);
 
-    return 0;
+    free_mpy_thread_args(args);
 }
 
-static void handle_identity_cmd(int argc, char **argv)
+void handle_identity_cmd(int argc, char **argv)
 {
+    printf(" Welcome to MicroPython \n");
+
     mpy_thread_args *args = alloc_mpy_thread_args(argc, argv);
     aos_task_new("python_entry", python_entry, (void *)args, 1024 * 20);
 }

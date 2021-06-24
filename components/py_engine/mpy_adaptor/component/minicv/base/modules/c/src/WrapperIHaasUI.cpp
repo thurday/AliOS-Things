@@ -1,18 +1,20 @@
 
 #include "WrapperIHaasUI.h"
 #include "IHaasUI.h"
-#include "HaasLog.h"
+#include "ulog/ulog.h"
 #include "HaasErrno.h"
 #include "IHaasUI.h"
 
+#define LOG_TAG "WRAPPER_UI"
+
 void* UICreateInstance(UIFrameworkType_t type)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasUI* mIHaasUI =  IHaasUIInstance(type);
     if (mIHaasUI == NULL)
     {
-        LOG_D("IHaasInstance failed %s;\n", __func__);
+        LOGD(LOG_TAG, "IHaasInstance failed %s;\n", __func__);
         return NULL;
     }
     return (void*)mIHaasUI;
@@ -23,12 +25,12 @@ void* UICreateInstance(UIFrameworkType_t type)
 
 void UIDestoryInstance(void* instance)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasUI* mIHaasUI = (IHaasUI*)instance;
     if (mIHaasUI == NULL)
     {
-        LOG_D("mIHaasUI is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasUI is NULL %s;\n", __func__);
         return;
     }
     delete mIHaasUI;
@@ -37,12 +39,12 @@ void UIDestoryInstance(void* instance)
 
 int UIGetDisplayWidth(void* instance)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasUI* mIHaasUI = (IHaasUI*)instance;
     if (mIHaasUI == NULL)
     {
-        LOG_D("mIHaasUI is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasUI is NULL %s;\n", __func__);
         return -1;
     }
     int ret = mIHaasUI->GetDisplayWidth();
@@ -54,12 +56,12 @@ int UIGetDisplayWidth(void* instance)
 
 int UIGetDisplayHeight(void* instance)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasUI* mIHaasUI = (IHaasUI*)instance;
     if (mIHaasUI == NULL)
     {
-        LOG_D("mIHaasUI is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasUI is NULL %s;\n", __func__);
         return -1;
     }
     int ret = mIHaasUI->GetDisplayHeight();
@@ -71,12 +73,12 @@ int UIGetDisplayHeight(void* instance)
 
 int UIGetDisplayBacklight(void* instance)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasUI* mIHaasUI = (IHaasUI*)instance;
     if (mIHaasUI == NULL)
     {
-        LOG_D("mIHaasUI is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasUI is NULL %s;\n", __func__);
         return -1;
     }
     int ret = mIHaasUI->GetDisplayBacklight();
@@ -88,12 +90,12 @@ int UIGetDisplayBacklight(void* instance)
 
 int UISetDisplayBacklight(void* instance, int32_t value)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasUI* mIHaasUI = (IHaasUI*)instance;
     if (mIHaasUI == NULL)
     {
-        LOG_D("mIHaasUI is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasUI is NULL %s;\n", __func__);
         return -1;
     }
     int ret = mIHaasUI->SetDisplayBacklight(value);
@@ -105,12 +107,12 @@ int UISetDisplayBacklight(void* instance, int32_t value)
 
 int UIGetDisplayType(void* instance)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasUI* mIHaasUI = (IHaasUI*)instance;
     if (mIHaasUI == NULL)
     {
-        LOG_D("mIHaasUI is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasUI is NULL %s;\n", __func__);
         return -1;
     }
     int ret = mIHaasUI->GetDisplayType();
@@ -122,12 +124,12 @@ int UIGetDisplayType(void* instance)
 
 int UIGetDisplayFreq(void* instance)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasUI* mIHaasUI = (IHaasUI*)instance;
     if (mIHaasUI == NULL)
     {
-        LOG_D("mIHaasUI is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasUI is NULL %s;\n", __func__);
         return -1;
     }
     int ret = mIHaasUI->GetDisplayFreq();
@@ -139,12 +141,12 @@ int UIGetDisplayFreq(void* instance)
 
 int UISetDisplayFreq(void* instance, int32_t freq)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasUI* mIHaasUI = (IHaasUI*)instance;
     if (mIHaasUI == NULL)
     {
-        LOG_D("mIHaasUI is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasUI is NULL %s;\n", __func__);
         return -1;
     }
     int ret = mIHaasUI->SetDisplayFreq(freq);
@@ -156,12 +158,12 @@ int UISetDisplayFreq(void* instance, int32_t freq)
 
 int UIDrawPoint(void* instance, Point_t *pt, int32_t color)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasUI* mIHaasUI = (IHaasUI*)instance;
     if (mIHaasUI == NULL)
     {
-        LOG_D("mIHaasUI is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasUI is NULL %s;\n", __func__);
         return -1;
     }
     int ret = mIHaasUI->DrawPoint(pt, color);
@@ -173,12 +175,12 @@ int UIDrawPoint(void* instance, Point_t *pt, int32_t color)
 
 int UIDrawLine(void* instance, Point_t *start, Point_t *end, int32_t color)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasUI* mIHaasUI = (IHaasUI*)instance;
     if (mIHaasUI == NULL)
     {
-        LOG_D("mIHaasUI is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasUI is NULL %s;\n", __func__);
         return -1;
     }
     int ret = mIHaasUI->DrawLine(start, end, color);
@@ -191,12 +193,12 @@ int UIDrawLine(void* instance, Point_t *start, Point_t *end, int32_t color)
 int UIDrawRectangle(void* instance, int32_t left, int32_t top, int32_t right, int32_t bottom,
         int32_t color)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasUI* mIHaasUI = (IHaasUI*)instance;
     if (mIHaasUI == NULL)
     {
-        LOG_D("mIHaasUI is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasUI is NULL %s;\n", __func__);
         return -1;
     }
     int ret = mIHaasUI->DrawRectangle(left, top, right, bottom, color);
@@ -208,12 +210,12 @@ int UIDrawRectangle(void* instance, int32_t left, int32_t top, int32_t right, in
 
 int UIDrawCircle(void* instance, Point_t * center, int32_t radius, int32_t color)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasUI* mIHaasUI = (IHaasUI*)instance;
     if (mIHaasUI == NULL)
     {
-        LOG_D("mIHaasUI is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasUI is NULL %s;\n", __func__);
         return -1;
     }
     int ret = mIHaasUI->DrawCircle(center, radius, color);
@@ -226,12 +228,12 @@ int UIDrawCircle(void* instance, Point_t * center, int32_t radius, int32_t color
 void UIDrawText(void* instance, char* text, int32_t size, int32_t color, int32_t left,
         int32_t top, int32_t right, int32_t bottom)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasUI* mIHaasUI = (IHaasUI*)instance;
     if (mIHaasUI == NULL)
     {
-        LOG_D("mIHaasUI is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasUI is NULL %s;\n", __func__);
         return;
     }
     mIHaasUI->DrawText(text, size, color, left, top, right, bottom);
@@ -240,12 +242,12 @@ void UIDrawText(void* instance, char* text, int32_t size, int32_t color, int32_t
 
 bool UIDrawPixels(void* instance, int32_t* pixels, Point_t *pt, int32_t width, int32_t height)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasUI* mIHaasUI = (IHaasUI*)instance;
     if (mIHaasUI == NULL)
     {
-        LOG_D("mIHaasUI is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasUI is NULL %s;\n", __func__);
         return false;
     }
     bool ret = mIHaasUI->DrawPixels(pixels, pt, width, height);
@@ -257,12 +259,12 @@ bool UIDrawPixels(void* instance, int32_t* pixels, Point_t *pt, int32_t width, i
 
 bool UIDrawImage(void* instance, char * path, Point_t *pt, int32_t width, int32_t height)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasUI* mIHaasUI = (IHaasUI*)instance;
     if (mIHaasUI == NULL)
     {
-        LOG_D("mIHaasUI is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasUI is NULL %s;\n", __func__);
         return false;
     }
     bool ret = mIHaasUI->DrawImage(path, pt, width, height);
@@ -274,12 +276,12 @@ bool UIDrawImage(void* instance, char * path, Point_t *pt, int32_t width, int32_
 
 void UIUpdateDisplay(void* instance)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasUI* mIHaasUI = (IHaasUI*)instance;
     if (mIHaasUI == NULL)
     {
-        LOG_D("mIHaasUI is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasUI is NULL %s;\n", __func__);
         return;
     }
     mIHaasUI->UpdateDisplay();

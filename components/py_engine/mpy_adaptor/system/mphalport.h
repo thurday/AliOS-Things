@@ -4,6 +4,8 @@
 #include "py/ringbuf.h"
 #include "lib/utils/interrupt_char.h"
 
+typedef uint32_t cpu_stack_t;
+
 extern ringbuf_t stdin_ringbuf;
 
 extern void mp_hal_set_interrupt_char(int c);

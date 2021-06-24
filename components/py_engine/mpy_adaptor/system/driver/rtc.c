@@ -6,10 +6,12 @@
 #include "py/obj.h"
 #include "py/runtime.h"
 #include "py/builtin.h"
-#include "k_api.h"
-#include "HaasLog.h"
+
+#include "ulog/ulog.h"
 #include "board_mgr.h"
 #include "aos_hal_rtc.h"
+
+#define LOG_TAG "DRIVER_RTC"
 
 extern const mp_obj_type_t driver_rtc_type;
 
@@ -31,14 +33,14 @@ typedef struct
 
 void rtc_obj_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
     mp_rtc_obj_t *self = MP_OBJ_TO_PTR(self_in);
     mp_printf(print, "ModuleName(%s)", self->ModuleName);
 }
 
 STATIC mp_obj_t rtc_obj_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args)
 {
-    LOG_D("entern  %s;\n", __func__);
+    LOGD(LOG_TAG, "entern  %s;\n", __func__);
     mp_rtc_obj_t* driver_obj = m_new_obj(mp_rtc_obj_t);
     if (!driver_obj) {
         mp_raise_OSError(ENOMEM);
@@ -52,29 +54,29 @@ STATIC mp_obj_t rtc_obj_make_new(const mp_obj_type_t *type, size_t n_args, size_
 
 STATIC mp_obj_t obj_open(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 1)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mp_rtc_obj_t* driver_obj = (mp_rtc_obj_t *)self;
     if (driver_obj == NULL)
     {
-        LOG_E("driver_obj is NULL\n");
+        LOGE(LOG_TAG, "driver_obj is NULL\n");
         return mp_const_none;
     }
 
     ret = aos_hal_rtc_init(&(driver_obj->rtc_dev));
-    LOG_D("%s:port: %d, format: %d;\n", __func__, driver_obj->rtc_dev.port, driver_obj->rtc_dev.config.format);
+    LOGD(LOG_TAG, "%s:port: %d, format: %d;\n", __func__, driver_obj->rtc_dev.port, driver_obj->rtc_dev.config.format);
     if (ret != 0)
     {
-        LOG_E("aos_hal_rtc_init fail!");
+        LOGE(LOG_TAG, "aos_hal_rtc_init fail!");
     }
-    LOG_D("%s:out\n", __func__);
+    LOGD(LOG_TAG, "%s:out\n", __func__);
 
     return MP_ROM_INT(ret);
 }
@@ -82,28 +84,28 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(rtc_obj_open, 1, obj_open);
 
 STATIC mp_obj_t obj_close(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 1)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mp_rtc_obj_t* driver_obj = (mp_rtc_obj_t *)self;
     if (driver_obj == NULL)
     {
-        LOG_E("driver_obj is NULL\n");
+        LOGE(LOG_TAG, "driver_obj is NULL\n");
         return mp_const_none;
     }
 
     ret = aos_hal_rtc_finalize(&(driver_obj->rtc_dev));
     if (ret != 0)
     {
-        LOG_E("aos_hal_rtc_finalize fail!");
+        LOGE(LOG_TAG, "aos_hal_rtc_finalize fail!");
     }
-    LOG_D("%s:out\n", __func__);
+    LOGD(LOG_TAG, "%s:out\n", __func__);
 
     return MP_ROM_INT(ret);
 }
@@ -111,31 +113,31 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(rtc_obj_close, 1, obj_close);
 
 STATIC mp_obj_t obj_getTime(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     rtc_time_t rtcTime;
     if (n_args < 1)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mp_rtc_obj_t* driver_obj = (mp_rtc_obj_t *)self;
     if (driver_obj == NULL)
     {
-        LOG_E("driver_obj is NULL\n");
+        LOGE(LOG_TAG, "driver_obj is NULL\n");
         return mp_const_none;
     }
 
     ret = aos_hal_rtc_get_time(&(driver_obj->rtc_dev), &rtcTime);
     if (ret != 0)
     {
-        LOG_E("aos_hal_rtc_get_time failed\n");
+        LOGE(LOG_TAG, "aos_hal_rtc_get_time failed\n");
         return mp_const_none;
     }
 
-    LOG_D("year = %d; month = %d;data = %d;\n", (uint32_t)rtcTime.year, (uint32_t)rtcTime.month, (uint32_t)rtcTime.date);
-    LOG_D("hr = %d; min = %d;sec = %d;\n", (uint32_t)rtcTime.hr, (uint32_t)rtcTime.min, (uint32_t)rtcTime.sec);
+    LOGD(LOG_TAG, "year = %d; month = %d;data = %d;\n", (uint32_t)rtcTime.year, (uint32_t)rtcTime.month, (uint32_t)rtcTime.date);
+    LOGD(LOG_TAG, "hr = %d; min = %d;sec = %d;\n", (uint32_t)rtcTime.hr, (uint32_t)rtcTime.min, (uint32_t)rtcTime.sec);
     mp_obj_t dict = mp_obj_new_dict(6);
     mp_obj_dict_store(MP_OBJ_FROM_PTR(dict),mp_obj_new_str("year",4),mp_obj_new_int((uint32_t)rtcTime.year));
     mp_obj_dict_store(MP_OBJ_FROM_PTR(dict),mp_obj_new_str("month",5),mp_obj_new_int((uint32_t)rtcTime.month));
@@ -150,26 +152,26 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(rtc_obj_getTime, 1, obj_getTime);
 
 STATIC mp_obj_t obj_setTime(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     rtc_time_t rtcTime;
     if (n_args < 7)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mp_rtc_obj_t* driver_obj = (mp_rtc_obj_t *)self;
     if (driver_obj == NULL)
     {
-        LOG_E("driver_obj is NULL\n");
+        LOGE(LOG_TAG, "driver_obj is NULL\n");
         return mp_const_none;
     }
 
     ret = aos_hal_rtc_get_time(&(driver_obj->rtc_dev), &rtcTime);
     if (ret != 0)
     {
-        LOG_E("aos_hal_rtc_get_time failed\n");
+        LOGE(LOG_TAG, "aos_hal_rtc_get_time failed\n");
         return mp_const_none;
     }
 
@@ -183,9 +185,9 @@ STATIC mp_obj_t obj_setTime(size_t n_args, const mp_obj_t *args)
     ret = aos_hal_rtc_set_time(&(driver_obj->rtc_dev), &rtcTime);
     if (ret != 0)
     {
-        LOG_E("aos_hal_rtc_get_time failed\n");
+        LOGE(LOG_TAG, "aos_hal_rtc_get_time failed\n");
     }
-    LOG_D("%s:out\n", __func__);
+    LOGD(LOG_TAG, "%s:out\n", __func__);
 
     return MP_ROM_INT(ret);
 }

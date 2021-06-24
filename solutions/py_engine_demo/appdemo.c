@@ -10,10 +10,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "py_engine_example.h"
+
 int application_start(int argc, char *argv[])
 {
-    int count = 0;
-
-    printf("python demo entry!\r\n");
-
+    handle_identity_cmd(argc, argv);
+    return 0;
 }

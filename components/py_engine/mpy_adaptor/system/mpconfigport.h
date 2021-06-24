@@ -183,8 +183,8 @@ extern const char haas_help_text[];
 #define MICROPY_PY_USSL_FINALISER           (1)
 #define MICROPY_PY_UWEBSOCKET               (1)
 #define MICROPY_PY_WEBREPL                  (1)
-#define MICROPY_PY_FRAMEBUF                 (1) //  fatal error: ports/stm32/font_petme128_8x8.h: No such file or directory 
-#define MICROPY_PY_BTREE                    (0) //  fatal error: btree/btree.h: No such file or directory 
+#define MICROPY_PY_FRAMEBUF                 (1) //  fatal error: ports/stm32/font_petme128_8x8.h: No such file or directory
+#define MICROPY_PY_BTREE                    (0) //  fatal error: btree/btree.h: No such file or directory
 #define MICROPY_PY_USOCKET_EVENTS           (MICROPY_PY_WEBREPL)
 #define MICROPY_PY_BLUETOOTH_RANDOM_ADDR    (1)
 #define MICROPY_PY_BLUETOOTH_DEFAULT_GAP_NAME ("HAAS")
@@ -247,7 +247,7 @@ typedef long mp_off_t;
 #endif
 
 #ifndef MICROPY_HW_MCU_NAME
-#define MICROPY_HW_MCU_NAME "HaaS100"
+#define MICROPY_HW_MCU_NAME "HaaS"
 #endif
 
 #ifdef __thumb__
@@ -281,7 +281,7 @@ typedef long mp_off_t;
         extern void mp_handle_pending(bool); \
         mp_handle_pending(true); \
         MICROPY_PY_USOCKET_EVENTS_HANDLER \
-        krhino_task_sleep(1); \
+        aos_msleep(1); \
     } while (0);
 
 #define MICROPY_THREAD_YIELD()
@@ -313,6 +313,12 @@ extern const struct _mp_obj_module_t oss_module;
 #define MICROPY_PY_OSS_DEF
 #endif
 
+#if PY_BUILD_UCAMERA
+extern const struct _mp_obj_module_t ucamera_module;
+#define MICROPY_PY_UCAMERA_DEF { MP_ROM_QSTR(MP_QSTR_UCamera), MP_ROM_PTR(&ucamera_module) },
+#else
+#define MICROPY_PY_UCAMERA_DEF
+#endif
 #if PY_BUILD_HTTP
 extern const struct _mp_obj_module_t http_module;
 #define MICROPY_PY_HTTP_DEF { MP_ROM_QSTR(MP_QSTR_http), MP_ROM_PTR(&http_module) },
@@ -401,6 +407,21 @@ extern const struct _mp_obj_module_t modbus_module;
 #define MICROPY_PY_MODBUS_DEF
 #endif
 
+
+#if PY_BUILD_ULOG
+extern const struct _mp_obj_module_t ulog_module;
+#define MICROPY_PY_ULOG_DEF { MP_ROM_QSTR(MP_QSTR_ulog), MP_ROM_PTR(&ulog_module) },
+#else
+#define MICROPY_PY_ULOG_DEF
+#endif
+
+#if PY_BUILD_OTA
+extern const struct _mp_obj_module_t ota_module;
+#define MICROPY_PY_OTA_DEF { MP_ROM_QSTR(MP_QSTR_ota), MP_ROM_PTR(&ota_module) },
+#else
+#define MICROPY_PY_OTA_DEF
+#endif
+
 #define MICROPY_PORT_BUILTIN_MODULES \
         MICROPY_PY_UTIME_DEF \
         {MP_ROM_QSTR(MP_QSTR_utime), MP_ROM_PTR(&utime_module)}, \
@@ -417,8 +438,11 @@ extern const struct _mp_obj_module_t modbus_module;
         MICROPY_PY_AUDIO_DEF \
         MICROPY_PY_UOS_DEF \
         MICROPY_PY_OSS_DEF \
+        MICROPY_PY_UCAMERA_DEF \
         MICROPY_PY_SNTP_DEF \
         MICROPY_PY_MODBUS_DEF \
+        MICROPY_PY_ULOG_DEF \
+        MICROPY_PY_OTA_DEF \
 
 
 

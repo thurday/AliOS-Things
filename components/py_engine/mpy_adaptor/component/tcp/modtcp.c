@@ -6,9 +6,10 @@
 #include "py/obj.h"
 #include "py/runtime.h"
 #include "py/builtin.h"
-#include "k_api.h"
-#include "HaasLog.h"
 
+#include "ulog/ulog.h"
+
+#define LOG_TAG "MOD_TCP"
 
 // this is the actual C-structure for our new object
 typedef struct
@@ -23,22 +24,22 @@ typedef struct
 
 STATIC mp_obj_t obj_createSocket(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 5)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mp_tcp_obj_t* driver_obj = (mp_tcp_obj_t *)self;
     if (driver_obj == NULL)
     {
-        LOG_E("driver_obj is NULL\n");
+        LOGE(LOG_TAG, "driver_obj is NULL\n");
         return mp_const_none;
     }
-    LOG_D("%s:out\n", __func__);
+    LOGD(LOG_TAG, "%s:out\n", __func__);
 
     return mp_const_none;
 }
@@ -46,22 +47,22 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(mp_obj_tcp_createSocket, 5, obj_createSocket)
 
 STATIC mp_obj_t obj_send(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 5)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mp_tcp_obj_t* driver_obj = (mp_tcp_obj_t *)self;
     if (driver_obj == NULL)
     {
-        LOG_E("driver_obj is NULL\n");
+        LOGE(LOG_TAG, "driver_obj is NULL\n");
         return mp_const_none;
     }
-    LOG_D("%s:out\n", __func__);
+    LOGD(LOG_TAG, "%s:out\n", __func__);
 
     return mp_const_none;
 }
@@ -69,22 +70,22 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(mp_obj_tcp_send, 5, obj_send);
 
 STATIC mp_obj_t obj_recv(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 5)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mp_tcp_obj_t* driver_obj = (mp_tcp_obj_t *)self;
     if (driver_obj == NULL)
     {
-        LOG_E("driver_obj is NULL\n");
+        LOGE(LOG_TAG, "driver_obj is NULL\n");
         return mp_const_none;
     }
-    LOG_D("%s:out\n", __func__);
+    LOGD(LOG_TAG, "%s:out\n", __func__);
 
     return mp_const_none;
 }

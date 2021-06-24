@@ -1,18 +1,20 @@
 
 #include "WrapperIHaasImageProc.h"
 #include "IHaasImageProc.h"
-#include "HaasLog.h"
+#include "ulog/ulog.h"
 #include "HaasErrno.h"
 #include "IHaasImageProc.h"
 
+#define LOG_TAG "WRAPPER_PROC"
+
 void* ImageProcCreateInstance(ImageProcType_t type)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasImageProc* mIHaasImageProc =  IHaasImageProcInstance(type);
     if (mIHaasImageProc == NULL)
     {
-        LOG_D("IHaasInstance failed %s;\n", __func__);
+        LOGD(LOG_TAG, "IHaasInstance failed %s;\n", __func__);
         return NULL;
     }
     return (void*)mIHaasImageProc;
@@ -23,12 +25,12 @@ void* ImageProcCreateInstance(ImageProcType_t type)
 
 void ImageProcDestoryInstance(void* instance)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasImageProc* mIHaasImageProc = (IHaasImageProc*)instance;
     if (mIHaasImageProc == NULL)
     {
-        LOG_D("mIHaasImageProc is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasImageProc is NULL %s;\n", __func__);
         return;
     }
     delete mIHaasImageProc;
@@ -38,12 +40,12 @@ void ImageProcDestoryInstance(void* instance)
 
 int ImageProcOpen(void* instance)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasImageProc* mIHaasImageProc = (IHaasImageProc*)instance;
     if (mIHaasImageProc == NULL)
     {
-        LOG_D("mIHaasImageProc is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasImageProc is NULL %s;\n", __func__);
         return -1;
     }
     int ret = mIHaasImageProc->Open();
@@ -55,12 +57,12 @@ int ImageProcOpen(void* instance)
 
 int ImageProcClose(void* instance)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasImageProc* mIHaasImageProc = (IHaasImageProc*)instance;
     if (mIHaasImageProc == NULL)
     {
-        LOG_D("mIHaasImageProc is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasImageProc is NULL %s;\n", __func__);
         return -1;
     }
     int ret = mIHaasImageProc->Close();
@@ -73,12 +75,12 @@ int ImageProcClose(void* instance)
 int ImageProcCvtColor(void* instance, const ImageBuffer_t* src, PixelFmt_t dst_format,
         ImageBuffer_t** dst)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasImageProc* mIHaasImageProc = (IHaasImageProc*)instance;
     if (mIHaasImageProc == NULL)
     {
-        LOG_D("mIHaasImageProc is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasImageProc is NULL %s;\n", __func__);
         return -1;
     }
     int ret = mIHaasImageProc->CvtColor(src, dst_format, dst);
@@ -91,12 +93,12 @@ int ImageProcCvtColor(void* instance, const ImageBuffer_t* src, PixelFmt_t dst_f
 int ImageProcResize(void* instance, const ImageBuffer_t* src, const ImageSize_t dst_size,
         ImageBuffer_t** dst)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasImageProc* mIHaasImageProc = (IHaasImageProc*)instance;
     if (mIHaasImageProc == NULL)
     {
-        LOG_D("mIHaasImageProc is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasImageProc is NULL %s;\n", __func__);
         return -1;
     }
     int ret = mIHaasImageProc->Resize(src, dst_size, dst);
@@ -108,12 +110,12 @@ int ImageProcResize(void* instance, const ImageBuffer_t* src, const ImageSize_t 
 
 int ImageProcImgCopy(void* instance, const ImageBuffer_t* src, ImageBuffer_t** dst)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasImageProc* mIHaasImageProc = (IHaasImageProc*)instance;
     if (mIHaasImageProc == NULL)
     {
-        LOG_D("mIHaasImageProc is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasImageProc is NULL %s;\n", __func__);
         return -1;
     }
     int ret = mIHaasImageProc->ImgCopy(src, dst);
@@ -126,12 +128,12 @@ int ImageProcImgCopy(void* instance, const ImageBuffer_t* src, ImageBuffer_t** d
 int ImageProcRectangle(void* instance, const ImageBuffer_t* src, int32_t left, int32_t top,
         int32_t right, int32_t bottom)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasImageProc* mIHaasImageProc = (IHaasImageProc*)instance;
     if (mIHaasImageProc == NULL)
     {
-        LOG_D("mIHaasImageProc is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasImageProc is NULL %s;\n", __func__);
         return -1;
     }
     int ret = mIHaasImageProc->Rectangle(src, left, top, right, bottom);
@@ -144,12 +146,12 @@ int ImageProcRectangle(void* instance, const ImageBuffer_t* src, int32_t left, i
 int ImageProcCircle(void* instance, const ImageBuffer_t* src, int32_t center_x, int32_t center_y,
         int32_t radius)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasImageProc* mIHaasImageProc = (IHaasImageProc*)instance;
     if (mIHaasImageProc == NULL)
     {
-        LOG_D("mIHaasImageProc is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasImageProc is NULL %s;\n", __func__);
         return -1;
     }
     int ret = mIHaasImageProc->Circle(src, center_x, center_y, radius);
@@ -161,12 +163,12 @@ int ImageProcCircle(void* instance, const ImageBuffer_t* src, int32_t center_x, 
 
 int ImageProcDrawMarker(void* instance, const ImageBuffer_t* src, Point_t *pt, int32_t type)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasImageProc* mIHaasImageProc = (IHaasImageProc*)instance;
     if (mIHaasImageProc == NULL)
     {
-        LOG_D("mIHaasImageProc is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasImageProc is NULL %s;\n", __func__);
         return -1;
     }
     int ret = mIHaasImageProc->DrawMarker(src, pt, type);
@@ -178,12 +180,12 @@ int ImageProcDrawMarker(void* instance, const ImageBuffer_t* src, Point_t *pt, i
 
 int ImageProcFillPoly(void* instance, const ImageBuffer_t* src, Point_t** pts, int32_t color)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasImageProc* mIHaasImageProc = (IHaasImageProc*)instance;
     if (mIHaasImageProc == NULL)
     {
-        LOG_D("mIHaasImageProc is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasImageProc is NULL %s;\n", __func__);
         return -1;
     }
     int ret = mIHaasImageProc->FillPoly(src, pts, color);
@@ -196,12 +198,12 @@ int ImageProcFillPoly(void* instance, const ImageBuffer_t* src, Point_t** pts, i
 int ImageProcPutText(void* instance, const ImageBuffer_t* src, char* text, int32_t left,
         int32_t top)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasImageProc* mIHaasImageProc = (IHaasImageProc*)instance;
     if (mIHaasImageProc == NULL)
     {
-        LOG_D("mIHaasImageProc is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasImageProc is NULL %s;\n", __func__);
         return -1;
     }
     int ret = mIHaasImageProc->PutText(src, text, left, top);
@@ -214,12 +216,12 @@ int ImageProcPutText(void* instance, const ImageBuffer_t* src, char* text, int32
 int ImageProcDilateErode(void* instance, const ImageBuffer_t* src, ImageBuffer_t* dst,
         int32_t iMode, int32_t iThresh)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasImageProc* mIHaasImageProc = (IHaasImageProc*)instance;
     if (mIHaasImageProc == NULL)
     {
-        LOG_D("mIHaasImageProc is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasImageProc is NULL %s;\n", __func__);
         return -1;
     }
     int ret = mIHaasImageProc->DilateErode(src, dst, iMode, iThresh);
@@ -232,12 +234,12 @@ int ImageProcDilateErode(void* instance, const ImageBuffer_t* src, ImageBuffer_t
 void ImageProcImageAdd(void* instance, const ImageBuffer_t* src, ImageBuffer_t* added,
         ImageBuffer_t* dst)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasImageProc* mIHaasImageProc = (IHaasImageProc*)instance;
     if (mIHaasImageProc == NULL)
     {
-        LOG_D("mIHaasImageProc is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasImageProc is NULL %s;\n", __func__);
         return;
     }
     mIHaasImageProc->ImageAdd(src, added, dst);
@@ -247,12 +249,12 @@ void ImageProcImageAdd(void* instance, const ImageBuffer_t* src, ImageBuffer_t* 
 void ImageProcImageMinus(void* instance, const ImageBuffer_t* src, ImageBuffer_t* minused,
         ImageBuffer_t* dst)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasImageProc* mIHaasImageProc = (IHaasImageProc*)instance;
     if (mIHaasImageProc == NULL)
     {
-        LOG_D("mIHaasImageProc is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasImageProc is NULL %s;\n", __func__);
         return;
     }
     mIHaasImageProc->ImageMinus(src, minused, dst);
@@ -262,12 +264,12 @@ void ImageProcImageMinus(void* instance, const ImageBuffer_t* src, ImageBuffer_t
 void ImageProcImageElementMultiply(void* instance, const ImageBuffer_t* src,
         ImageBuffer_t* multiplied, ImageBuffer_t* dst)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasImageProc* mIHaasImageProc = (IHaasImageProc*)instance;
     if (mIHaasImageProc == NULL)
     {
-        LOG_D("mIHaasImageProc is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasImageProc is NULL %s;\n", __func__);
         return;
     }
     mIHaasImageProc->ImageElementMultiply(src, multiplied, dst);
@@ -277,12 +279,12 @@ void ImageProcImageElementMultiply(void* instance, const ImageBuffer_t* src,
 void ImageProcImageElementDivide(void* instance, const ImageBuffer_t* src,
         ImageBuffer_t* divied, ImageBuffer_t* dst)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasImageProc* mIHaasImageProc = (IHaasImageProc*)instance;
     if (mIHaasImageProc == NULL)
     {
-        LOG_D("mIHaasImageProc is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasImageProc is NULL %s;\n", __func__);
         return;
     }
     mIHaasImageProc->ImageElementDivide(src, divied, dst);
@@ -291,12 +293,12 @@ void ImageProcImageElementDivide(void* instance, const ImageBuffer_t* src,
 
 int ImageProcWriteImageToFile(void* instance, const ImageBuffer_t* src, char* file_name)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasImageProc* mIHaasImageProc = (IHaasImageProc*)instance;
     if (mIHaasImageProc == NULL)
     {
-        LOG_D("mIHaasImageProc is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasImageProc is NULL %s;\n", __func__);
         return -1;
     }
     int ret = mIHaasImageProc->WriteImageToFile(src, file_name);

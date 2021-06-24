@@ -6,20 +6,22 @@
 #include "py/obj.h"
 #include "py/runtime.h"
 #include "py/builtin.h"
-#include "k_api.h"
-#include "HaasLog.h"
+
+#include "ulog/ulog.h"
+
+#define LOG_TAG "MOD_PM"
 
 STATIC mp_obj_t obj_open(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 5)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
-    LOG_D("%s:out\n", __func__);
+    LOGD(LOG_TAG, "%s:out\n", __func__);
 
     return mp_const_none;
 }
@@ -27,15 +29,15 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(pm_obj_open, 5, obj_open);
 
 STATIC mp_obj_t obj_close(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 5)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
-    LOG_D("%s:out\n", __func__);
+    LOGD(LOG_TAG, "%s:out\n", __func__);
 
     return mp_const_none;
 }
@@ -43,15 +45,15 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(pm_obj_close, 5, obj_close);
 
 STATIC mp_obj_t obj_setAutosleepMode(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 5)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
-    LOG_D("%s:out\n", __func__);
+    LOGD(LOG_TAG, "%s:out\n", __func__);
 
     return mp_const_none;
 }
@@ -59,15 +61,15 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(pm_obj_setAutosleepMode, 5, obj_setAutosleepM
 
 STATIC mp_obj_t obj_getAutosleepMode(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 5)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
-    LOG_D("%s:out\n", __func__);
+    LOGD(LOG_TAG, "%s:out\n", __func__);
 
     return mp_const_none;
 }
@@ -75,15 +77,15 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(pm_obj_getAutosleepMode, 5, obj_getAutosleepM
 
 STATIC mp_obj_t obj_sleep(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 5)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
-    LOG_D("%s:out\n", __func__);
+    LOGD(LOG_TAG, "%s:out\n", __func__);
 
     return mp_const_none;
 }
@@ -91,15 +93,15 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(pm_obj_sleep, 5, obj_sleep);
 
 STATIC mp_obj_t obj_powerDown(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 5)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
-    LOG_D("%s:out\n", __func__);
+    LOGD(LOG_TAG, "%s:out\n", __func__);
 
     return mp_const_none;
 }
@@ -107,15 +109,15 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(pm_obj_powerDown, 5, obj_powerDown);
 
 STATIC mp_obj_t obj_powerReset(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 5)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
-    LOG_D("%s:out\n", __func__);
+    LOGD(LOG_TAG, "%s:out\n", __func__);
 
     return mp_const_none;
 }
@@ -123,15 +125,15 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(pm_obj_powerReset, 5, obj_powerReset);
 
 STATIC mp_obj_t obj_wakelockLock(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 5)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
-    LOG_D("%s:out\n", __func__);
+    LOGD(LOG_TAG, "%s:out\n", __func__);
 
     return mp_const_none;
 }
@@ -139,15 +141,15 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(pm_obj_wakelockLock, 5, obj_wakelockLock);
 
 STATIC mp_obj_t obj_wakelockUnlock(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 5)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
-    LOG_D("%s:out\n", __func__);
+    LOGD(LOG_TAG, "%s:out\n", __func__);
 
     return mp_const_none;
 }
@@ -155,15 +157,15 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(pm_obj_wakelockUnlock, 5, obj_wakelockUnlock)
 
 STATIC mp_obj_t obj_wakelockTimedlock(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 5)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
-    LOG_D("%s:out\n", __func__);
+    LOGD(LOG_TAG, "%s:out\n", __func__);
 
     return mp_const_none;
 }
@@ -171,15 +173,15 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(pm_obj_wakelockTimedlock, 5, obj_wakelockTime
 
 STATIC mp_obj_t obj_onPwrkey(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 5)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
-    LOG_D("%s:out\n", __func__);
+    LOGD(LOG_TAG, "%s:out\n", __func__);
 
     return mp_const_none;
 }

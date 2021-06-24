@@ -6,9 +6,11 @@
 #include "py/obj.h"
 #include "py/runtime.h"
 #include "py/builtin.h"
-#include "k_api.h"
-#include "HaasLog.h"
+
+#include "ulog/ulog.h"
 #include "WrapperIHaasDataInput.h"
+
+#define LOG_TAG "DATAINPUT"
 
 extern const mp_obj_type_t minicv_datainput_type;
 // this is the actual C-structure for our new object
@@ -26,14 +28,14 @@ typedef struct
 
 void datainput_obj_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
     mp_datainput_obj_t *self = MP_OBJ_TO_PTR(self_in);
     mp_printf(print, "ModuleName(%s)", self->ModuleName);
 }
 
 STATIC mp_obj_t datainput_obj_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args)
 {
-    LOG_D("entern  %s;\n", __func__);
+    LOGD(LOG_TAG, "entern  %s;\n", __func__);
     mp_datainput_obj_t* driver_obj = m_new_obj(mp_datainput_obj_t);
     if (!driver_obj) {
         mp_raise_OSError(ENOMEM);
@@ -51,44 +53,44 @@ STATIC mp_obj_t datainput_obj_make_new(const mp_obj_type_t *type, size_t n_args,
 
 STATIC mp_obj_t obj_open(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 3)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mp_datainput_obj_t* driver_obj = (mp_datainput_obj_t *)self;
     if (driver_obj == NULL)
     {
-        LOG_E("driver_obj is NULL\n");
+        LOGE(LOG_TAG, "driver_obj is NULL\n");
         return mp_const_none;
     }
 
     if (driver_obj->mInstance != NULL)
     {
-        LOG_E("Module has been opened, please clode first\n");
+        LOGE(LOG_TAG, "Module has been opened, please clode first\n");
         return mp_const_none;
     }
 
     driver_obj->mDataInputType = (DataInputType_t)mp_obj_get_int(args[1]);
     driver_obj->mFileName = (char *)mp_obj_str_get_str(args[2]);
-    LOG_D("%s:mDataInputType = %d;\n", __func__, driver_obj->mDataInputType);
-    LOG_D("%s:mFileName = %s;\n", __func__, driver_obj->mFileName);
+    LOGD(LOG_TAG, "%s:mDataInputType = %d;\n", __func__, driver_obj->mDataInputType);
+    LOGD(LOG_TAG, "%s:mFileName = %s;\n", __func__, driver_obj->mFileName);
     instance = DataInputCreateInstance(driver_obj->mDataInputType);
     driver_obj->mInstance = instance;
     if (instance == NULL)
     {
-        LOG_E("DataInputCreateInstance failed\n");
+        LOGE(LOG_TAG, "DataInputCreateInstance failed\n");
         return mp_const_none;
     }
 
     ret = DataInputOpen(instance, driver_obj->mFileName);
     if(ret)
     {
-        LOG_E("\r\n=====datainput open failed===\r\n");
+        LOGE(LOG_TAG, "\r\n=====datainput open failed===\r\n");
         return mp_const_none;
     }
     return mp_const_none;
@@ -97,48 +99,48 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(datainput_obj_open, 3, obj_open);
 
 STATIC mp_obj_t obj_openCamera(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 3)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mp_datainput_obj_t* driver_obj = (mp_datainput_obj_t *)self;
     if (driver_obj == NULL)
     {
-        LOG_E("driver_obj is NULL\n");
+        LOGE(LOG_TAG, "driver_obj is NULL\n");
         return mp_const_none;
     }
 
     if (driver_obj->mInstance != NULL)
     {
-        LOG_E("Module has been opened, please clode first\n");
+        LOGE(LOG_TAG, "Module has been opened, please clode first\n");
         return mp_const_none;
     }
 
     driver_obj->mDataInputType = (DataInputType_t)mp_obj_get_int(args[1]);
     driver_obj->mCameraNum = (CameraNumber_t)mp_obj_get_int(args[2]);
-    LOG_D("%s:mDataInputType = %d;\n", __func__, driver_obj->mDataInputType);
-    LOG_D("%s:mCameraNum = %d;\n", __func__, driver_obj->mCameraNum);
+    LOGD(LOG_TAG, "%s:mDataInputType = %d;\n", __func__, driver_obj->mDataInputType);
+    LOGD(LOG_TAG, "%s:mCameraNum = %d;\n", __func__, driver_obj->mCameraNum);
     instance = DataInputCreateInstance(driver_obj->mDataInputType);
     driver_obj->mInstance = instance;
     if (instance == NULL)
     {
-        LOG_E("DataInputCreateInstance failed\n");
+        LOGE(LOG_TAG, "DataInputCreateInstance failed\n");
         return mp_const_none;
     }
 
     ret = DataInputOpen2(instance, driver_obj->mCameraNum);
     if(ret)
     {
-        LOG_E("\r\n=====datainput opencamera failed===\r\n");
+        LOGE(LOG_TAG, "\r\n=====datainput opencamera failed===\r\n");
         return mp_const_none;
     }
 
-    LOG_D("%s:out\n", __func__);
+    LOGD(LOG_TAG, "%s:out\n", __func__);
 
     return mp_const_none;
 }
@@ -146,25 +148,25 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(datainput_obj_openCamera, 3, obj_openCamera);
 
 STATIC mp_obj_t obj_close(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 1)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mp_datainput_obj_t* driver_obj = (mp_datainput_obj_t *)self;
     if (driver_obj == NULL)
     {
-        LOG_E("driver_obj is NULL\n");
+        LOGE(LOG_TAG, "driver_obj is NULL\n");
         return mp_const_none;
     }
 
     if (driver_obj->mInstance == NULL)
     {
-        LOG_E("Module has not been opened, not need close\n");
+        LOGE(LOG_TAG, "Module has not been opened, not need close\n");
         return mp_const_none;
     }
 
@@ -174,7 +176,7 @@ STATIC mp_obj_t obj_close(size_t n_args, const mp_obj_t *args)
     driver_obj->mFileName = NULL;
     driver_obj->mInstance = NULL;
 
-    LOG_D("%s:out\n", __func__);
+    LOGD(LOG_TAG, "%s:out\n", __func__);
 
     return mp_const_none;
 }
@@ -182,30 +184,30 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(datainput_obj_close, 1, obj_close);
 
 STATIC mp_obj_t obj_checkDataReady(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     void* instance = NULL;
     if (n_args < 1)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mp_datainput_obj_t* driver_obj = (mp_datainput_obj_t *)self;
     if (driver_obj == NULL)
     {
-        LOG_E("driver_obj is NULL\n");
+        LOGE(LOG_TAG, "driver_obj is NULL\n");
         return mp_const_none;
     }
 
     if (driver_obj->mInstance == NULL)
     {
-        LOG_E("Module has not been opened, please open first\n");
+        LOGE(LOG_TAG, "Module has not been opened, please open first\n");
         return mp_const_none;
     }
 
     int state = (int)DataInputCheckDataReady(driver_obj->mInstance);
     mp_obj_t ret = mp_obj_new_bool(state);
-    LOG_D("%s:out state = %d;\n", __func__, state);
+    LOGD(LOG_TAG, "%s:out state = %d;\n", __func__, state);
 
     return MP_ROM_INT(&ret);
 }
@@ -213,36 +215,36 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(datainput_obj_checkDataReady, 1, obj_checkDat
 
 STATIC mp_obj_t obj_requestData(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     ImageBuffer_t *image = NULL;
     if (n_args < 1)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mp_datainput_obj_t* driver_obj = (mp_datainput_obj_t *)self;
     if (driver_obj == NULL)
     {
-        LOG_E("driver_obj is NULL\n");
+        LOGE(LOG_TAG, "driver_obj is NULL\n");
         return mp_const_none;
     }
     if (driver_obj->mInstance == NULL)
     {
-        LOG_E("Module has not been opened, please open first\n");
+        LOGE(LOG_TAG, "Module has not been opened, please open first\n");
         return mp_const_none;
     }
 
     ret = DataInputRequestData(driver_obj->mInstance, &image, 1000);
     if (ret != 0)
     {
-        LOG_E("Request Data failed\n");
+        LOGE(LOG_TAG, "Request Data failed\n");
         return mp_const_none;
     }
 
-    LOG_D("%s:out image->address[0] = %p;image = %p;\n", __func__, image->address[0], image);
+    LOGD(LOG_TAG, "%s:out image->address[0] = %p;image = %p;\n", __func__, image->address[0], image);
 
     return MP_OBJ_FROM_PTR(image);
 }
@@ -250,37 +252,37 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(datainput_obj_requestData, 1, obj_requestData
 
 STATIC mp_obj_t obj_releaseData(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 2)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mp_datainput_obj_t* driver_obj = (mp_datainput_obj_t *)self;
     if (driver_obj == NULL)
     {
-        LOG_E("driver_obj is NULL\n");
+        LOGE(LOG_TAG, "driver_obj is NULL\n");
         return mp_const_none;
     }
 
     ImageBuffer_t *image = (ImageBuffer_t *)MP_OBJ_TO_PTR(args[1]);
     if (image == NULL)
     {
-        LOG_E("image is NULL\n");
+        LOGE(LOG_TAG, "image is NULL\n");
         return mp_const_none;
     }
 
     ret = DataInputReleaseData(driver_obj->mInstance, image);
     if (ret != 0)
     {
-        LOG_E("Release Data failed\n");
+        LOGE(LOG_TAG, "Release Data failed\n");
         return mp_const_none;
     }
 
-    LOG_D("%s:out\n", __func__);
+    LOGD(LOG_TAG, "%s:out\n", __func__);
 
     return mp_const_none;
 }

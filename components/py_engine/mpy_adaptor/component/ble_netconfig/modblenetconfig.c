@@ -24,8 +24,9 @@
 #include <netmgr.h>
 #include <netmgr_wifi.h>
 #include <ble_netconfig.h>
+#include "ulog/ulog.h"
 
-#include "HaasLog.h"
+#define LOG_TAG "BLE_NET_CONFIG"
 
 // BLE_NetCfg_init set WIFI DEV PATH
 #define WIFI_DEV_PATH "/dev/wifi0"
@@ -39,14 +40,14 @@ typedef struct amp_wifi_info {
 
 STATIC mp_obj_t ble_config_run(void)
 {
-    LOG_D("%s:%d function entry\n", __func__, __LINE__);
+    LOGD(LOG_TAG, "%s:%d function entry\n", __func__, __LINE__);
     int ret;
     ret = BleCfg_run();
     if (ret) {
-        LOG_E("error: BLE Config Run! ret %x\r\n", ret);
+        LOGE(LOG_TAG, "error: BLE Net Config initial! ret %x\r\n", ret);
         return mp_const_false;
     } else {
-        LOG_D("%s:%d BLE Config Run OK!\n", __func__, __LINE__);
+        LOGD(LOG_TAG, "%s:%d BLE Net Config Init OK!\n", __func__, __LINE__);
         return mp_const_true;
     }
 }
@@ -54,14 +55,14 @@ MP_DEFINE_CONST_FUN_OBJ_0(ble_config_obj_run, ble_config_run);
 
 STATIC mp_obj_t ble_config_recovery_wifi(void)
 {
-    LOG_D("%s:%d function entry\n", __func__, __LINE__);
+    LOGD(LOG_TAG, "%s:%d function entry\n", __func__, __LINE__);
     int ret;
     ret = BleCfg_recovery_wifi();
     if (ret) {
-        LOG_E("error: BLE Config recovery wifi! ret %x\r\n", ret);
+        LOGE(LOG_TAG, "error: BLE Net Config start! ret %x\r\n", ret);
         return mp_const_false;
     } else {
-        LOG_D("%s:%d BLE Config recovery wifi OK!\n", __func__, __LINE__);
+        LOGD(LOG_TAG,"%s:%d BLE Net Config Start OK!\n", __func__, __LINE__);
         return mp_const_true;
     }
 }
@@ -69,14 +70,14 @@ MP_DEFINE_CONST_FUN_OBJ_0(ble_config_obj_recovery_wifi, ble_config_recovery_wifi
 
 STATIC mp_obj_t ble_config_recovery_devinfo(void)
 {
-    LOG_D("%s:%d function entry\n", __func__, __LINE__);
+    LOGD(LOG_TAG, "%s:%d function entry\n", __func__, __LINE__);
     int ret;
     ret = BleCfg_recovery_devinfo();
     if (ret) {
-        LOG_E("error: BLE Config recovery wifi! ret %x\r\n", ret);
+        LOGE(LOG_TAG, "error: BLE Net Config stop! ret %x\r\n", ret);
         return mp_const_false;
     } else {
-        LOG_D("%s:%d BLE Config recovery wifi OK!\n", __func__, __LINE__);
+        LOGD(LOG_TAG, "%s:%d BLE Net Config Stop OK!\n", __func__, __LINE__);
         return mp_const_true;
     }
 }
@@ -85,7 +86,8 @@ MP_DEFINE_CONST_FUN_OBJ_0(ble_config_obj_recovery_devinfo, ble_config_recovery_d
 // get wifi info
 int ble_config_get_wifi_info(amp_wifi_info_t *wifi_info)
 {
-    LOG_D("%s:%d function entry\n", __func__, __LINE__);
+    LOGD(LOG_TAG, "%s:%d function entry\n", __func__, __LINE__);
+
     netmgr_hdl_t hdl;
     netmgr_config_t config;
     netmgr_ifconfig_info_t info;
@@ -141,11 +143,12 @@ STATIC mp_obj_t ble_config_get_wifi_status(void) {
 
     return dict;
 }
+
 MP_DEFINE_CONST_FUN_OBJ_0(ble_config_obj_get_wifi_info, ble_config_get_wifi_status);
 
 STATIC mp_obj_t ble_config_get_status(void)
 {
-    LOG_D("%s:%d function entry\n", __func__, __LINE__);
+    LOGD(LOG_TAG, "%s:%d function entry\n", __func__, __LINE__);
     netmgr_hdl_t hdl;
     hdl = netmgr_get_dev(WIFI_DEV_PATH);
 
@@ -160,6 +163,7 @@ STATIC mp_obj_t ble_config_get_status(void)
     return mp_const_false ;
 
 }
+
 MP_DEFINE_CONST_FUN_OBJ_0(ble_config_obj_get_status, ble_config_get_status);
 
 STATIC const mp_rom_map_elem_t blenetconfig_module_globals_table[] = {

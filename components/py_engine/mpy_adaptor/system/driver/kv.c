@@ -6,9 +6,11 @@
 #include "py/obj.h"
 #include "py/runtime.h"
 #include "py/builtin.h"
-#include "k_api.h"
-#include "HaasLog.h"
+
+#include "ulog/ulog.h"
 #include "aos/kv.h"
+
+#define LOG_TAG "DRIVER_KV"
 
 extern const mp_obj_type_t system_kv_type;
 #define KV_BUFFER_MAX_LEN   256
@@ -23,14 +25,14 @@ typedef struct
 
 void kv_obj_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
     mp_kv_obj_t *self = MP_OBJ_TO_PTR(self_in);
     mp_printf(print, "ModuleName(%s)", self->ModuleName);
 }
 
 STATIC mp_obj_t kv_obj_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args)
 {
-    LOG_D("entern  %s;\n", __func__);
+    LOGD(LOG_TAG, "entern  %s;\n", __func__);
     mp_kv_obj_t* driver_obj = m_new_obj(mp_kv_obj_t);
     if (!driver_obj) {
         mp_raise_OSError(ENOMEM);
@@ -44,22 +46,22 @@ STATIC mp_obj_t kv_obj_make_new(const mp_obj_type_t *type, size_t n_args, size_t
 
 STATIC mp_obj_t obj_open(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 1)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mp_kv_obj_t* driver_obj = (mp_kv_obj_t *)self;
     if (driver_obj == NULL)
     {
-        LOG_E("driver_obj is NULL\n");
+        LOGE(LOG_TAG, "driver_obj is NULL\n");
         return mp_const_none;
     }
-    LOG_D("%s:out\n", __func__);
+    LOGD(LOG_TAG, "%s:out\n", __func__);
 
     return mp_const_none;
 }
@@ -67,22 +69,22 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(kv_obj_open, 1, obj_open);
 
 STATIC mp_obj_t obj_close(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 1)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mp_kv_obj_t* driver_obj = (mp_kv_obj_t *)self;
     if (driver_obj == NULL)
     {
-        LOG_E("driver_obj is NULL\n");
+        LOGE(LOG_TAG, "driver_obj is NULL\n");
         return mp_const_none;
     }
-    LOG_D("%s:out\n", __func__);
+    LOGD(LOG_TAG, "%s:out\n", __func__);
 
     return mp_const_none;
 }
@@ -90,7 +92,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(kv_obj_close, 1, obj_close);
 
 STATIC mp_obj_t obj_setStorageSync(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     char *key;
     char *value;
@@ -98,14 +100,14 @@ STATIC mp_obj_t obj_setStorageSync(size_t n_args, const mp_obj_t *args)
 
     if (n_args < 3)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mp_kv_obj_t* driver_obj = (mp_kv_obj_t *)self;
     if (driver_obj == NULL)
     {
-        LOG_E("driver_obj is NULL\n");
+        LOGE(LOG_TAG, "driver_obj is NULL\n");
         return mp_const_none;
     }
 
@@ -116,9 +118,9 @@ STATIC mp_obj_t obj_setStorageSync(size_t n_args, const mp_obj_t *args)
     ret = aos_kv_set(key, value, value_len, 1);
     if (ret != 0)
     {
-        LOG_E("%s:aos_kv_set failed\n", __func__);
+        LOGE(LOG_TAG, "%s:aos_kv_set failed\n", __func__);
     }
-    LOG_D("%s:out\n", __func__);
+    LOGD(LOG_TAG, "%s:out\n", __func__);
 
     return MP_ROM_INT(ret);
 }
@@ -126,7 +128,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(kv_obj_setStorageSync, 3, obj_setStorageSync)
 
 STATIC mp_obj_t obj_getStorageSync(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     int32_t value_len = KV_BUFFER_MAX_LEN;
     char *key;
@@ -134,14 +136,14 @@ STATIC mp_obj_t obj_getStorageSync(size_t n_args, const mp_obj_t *args)
 
     if (n_args < 3)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mp_kv_obj_t* driver_obj = (mp_kv_obj_t *)self;
     if (driver_obj == NULL)
     {
-        LOG_E("driver_obj is NULL\n");
+        LOGE(LOG_TAG, "driver_obj is NULL\n");
         return mp_const_none;
     }
 
@@ -152,20 +154,20 @@ STATIC mp_obj_t obj_getStorageSync(size_t n_args, const mp_obj_t *args)
 
     value = (char *)aos_malloc(KV_BUFFER_MAX_LEN);
     if (value == NULL) {
-        LOG_E("allocate memory failed\n");
+        LOGE(LOG_TAG, "allocate memory failed\n");
         return mp_const_none;
     }
 
     ret = aos_kv_get(key, value, &value_len);
     if (ret != 0) {
-        LOG_E("kv get storage failed\n");
+        LOGE(LOG_TAG, "kv get storage failed\n");
         aos_free(value);
         return mp_const_none;
     }
 
     if (bufinfo.len < value_len)
     {
-        LOG_E("buffer size is not enough\n");
+        LOGE(LOG_TAG, "buffer size is not enough\n");
         aos_free(value);
         return mp_const_none;
     }
@@ -173,7 +175,7 @@ STATIC mp_obj_t obj_getStorageSync(size_t n_args, const mp_obj_t *args)
     memcpy(bufinfo.buf, value, value_len);
 
     aos_free(value);
-    LOG_D("%s:out\n", __func__);
+    LOGD(LOG_TAG, "%s:out\n", __func__);
 
     return mp_const_none;
 }
@@ -181,32 +183,32 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(kv_obj_getStorageSync, 3, obj_getStorageSync)
 
 STATIC mp_obj_t obj_removeStorageSync(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     char * key;
 
     if (n_args < 2)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mp_kv_obj_t* driver_obj = (mp_kv_obj_t *)self;
     if (driver_obj == NULL)
     {
-        LOG_E("driver_obj is NULL\n");
+        LOGE(LOG_TAG, "driver_obj is NULL\n");
         return mp_const_none;
     }
 
     key = (char *)mp_obj_str_get_str(args[1]);
-    LOG_D("%s:key = %s;\n", __func__, key);
+    LOGD(LOG_TAG, "%s:key = %s;\n", __func__, key);
 
     ret = aos_kv_del(key);
     if (ret != 0) {
-        LOG_E("kv delete item failed\n");
+        LOGE(LOG_TAG, "kv delete item failed\n");
         return mp_const_none;
     }
-    LOG_D("%s:out\n", __func__);
+    LOGD(LOG_TAG, "%s:out\n", __func__);
 
     return mp_const_none;
 }

@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "HaasLog.h"
-#include "k_api.h"
+#include "ulog/ulog.h"
+
 #include "py/builtin.h"
 #include "py/mperrno.h"
 #include "py/obj.h"
@@ -11,6 +11,8 @@
 #include "uvoice_types.h"
 #include "uvoice_init.h"
 #include "uvoice_player.h"
+
+#define LOG_TAG "UVOICE_PLAYER"
 
 #define PLAYER_CHECK_PARAMS()                                                  \
     uvocie_player_obj_t *self = (uvocie_player_obj_t *)MP_OBJ_TO_PTR(self_in); \
@@ -65,7 +67,7 @@ STATIC mp_obj_t uvoice_create(mp_obj_t self_in)
 {
     uvocie_player_obj_t *self = (uvocie_player_obj_t *)MP_OBJ_TO_PTR(self_in);
     if (self == NULL) {
-        LOG_E("uvocie_player_obj_t NULL");
+        LOGE(LOG_TAG, "uvocie_player_obj_t NULL");
         return mp_const_none;
     }
 
@@ -172,7 +174,7 @@ STATIC mp_obj_t uvoice_set_source(mp_obj_t self_in, mp_obj_t source_in)
     PLAYER_CHECK_PARAMS();
 
     char *source = mp_obj_str_get_str(source_in);
-    LOG_D("source = %s", source);
+    LOGD(LOG_TAG, "source = %s", source);
 
     mp_int_t status = self->player_obj->set_source(source);
     return mp_obj_new_int(status);
@@ -191,7 +193,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(uvoice_clr_source_obj, uvoice_clr_source);
 STATIC mp_obj_t uvoice_set_stream(size_t n_args, const mp_obj_t *args)
 {
     if (n_args < 4) {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
 
@@ -201,7 +203,7 @@ STATIC mp_obj_t uvoice_set_stream(size_t n_args, const mp_obj_t *args)
     media_format_t format = (media_format_t)mp_obj_get_int(args[1]);
     int cache_enable = mp_obj_get_int(args[2]);
     int cache_size = mp_obj_get_int(args[3]);
-    LOG_D("format=%d, cache_enable = %d, cache_size = %d", format, cache_enable, cache_size);
+    LOGD(LOG_TAG, "format=%d, cache_enable = %d, cache_size = %d", format, cache_enable, cache_size);
 
     mp_int_t status = self->player_obj->set_stream(format, cache_enable, cache_size);
     return mp_obj_new_int(status);
@@ -218,7 +220,7 @@ STATIC mp_obj_t uvoice_put_stream(mp_obj_t self_in, mp_obj_t buffer_in, mp_obj_t
     mp_get_buffer_raise(buffer_in, &bufinfo, MP_BUFFER_READ);
     const uint8_t *data = (const uint8_t *)bufinfo.buf;
 
-    LOG_D("bufinfo.buf= [%d, %d, %d, %d], bufinfo.len = %d, nbytes = %d", data[0], data[1], data[2], data[3],
+    LOGD(LOG_TAG, "bufinfo.buf= [%d, %d, %d, %d], bufinfo.len = %d, nbytes = %d", data[0], data[1], data[2], data[3],
           bufinfo.len, nbytes);
 
     mp_int_t status = self->player_obj->put_stream(data, bufinfo.len);
@@ -231,7 +233,7 @@ STATIC mp_obj_t uvoice_clr_stream(mp_obj_t self_in, mp_obj_t immediate_in)
     PLAYER_CHECK_PARAMS();
 
     int immediate = mp_obj_get_int(immediate_in);
-    LOG_D("immediate = %d", immediate);
+    LOGD(LOG_TAG, "immediate = %d", immediate);
 
     mp_int_t status = self->player_obj->clr_stream(immediate);
     return mp_obj_new_int(status);
@@ -241,7 +243,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_2(uvoice_clr_stream_obj, uvoice_clr_stream);
 STATIC mp_obj_t uvoice_set_pcminfo(size_t n_args, const mp_obj_t *args)
 {
     if (n_args < 5) {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
 
@@ -253,7 +255,7 @@ STATIC mp_obj_t uvoice_set_pcminfo(size_t n_args, const mp_obj_t *args)
     int bits = mp_obj_get_int(args[3]);
     int frames = mp_obj_get_int(args[4]);
 
-    LOG_D("rate=%d, channels=%d, bits=%d, frames=%d\n", rate, channels, bits, frames);
+    LOGD(LOG_TAG, "rate=%d, channels=%d, bits=%d, frames=%d\n", rate, channels, bits, frames);
 
     mp_int_t status = self->player_obj->set_pcminfo(rate, channels, bits, frames);
     return mp_obj_new_int(status);
@@ -329,7 +331,7 @@ STATIC mp_obj_t uvoice_seek(mp_obj_t self_in, mp_obj_t second_in)
     PLAYER_CHECK_PARAMS();
 
     int second = mp_obj_get_int(second_in);
-    LOG_D("second = %d", second);
+    LOGD(LOG_TAG, "second = %d", second);
 
     mp_int_t status = self->player_obj->seek(second);
     return mp_obj_new_int(status);
@@ -341,7 +343,7 @@ STATIC mp_obj_t uvoice_playback(mp_obj_t self_in, mp_obj_t source_in)
     PLAYER_CHECK_PARAMS();
 
     char *source = (char*)mp_obj_str_get_str(source_in);
-    LOG_D("source = %s", source);
+    LOGD(LOG_TAG, "source = %s", source);
 
     mp_int_t status = self->player_obj->playback(source);
     return mp_obj_new_int(status);
@@ -361,7 +363,7 @@ STATIC mp_obj_t uvoice_download(mp_obj_t self_in, mp_obj_t name_in)
 {
     PLAYER_CHECK_PARAMS();
     char *name = (char *)mp_obj_str_get_str(name_in);
-    LOG_D("name = %s", name);
+    LOGD(LOG_TAG, "name = %s", name);
 
     mp_int_t status = self->player_obj->download(name);
     return mp_obj_new_int(status);
@@ -387,9 +389,9 @@ STATIC mp_obj_t uvoice_cache_config(mp_obj_t self_in, mp_obj_t config_dict)
     const char *file_path = get_str_from_dict(config_dict, "file_path");
     strncpy(config.file_path, file_path, strlen(file_path));
 
-    LOG_D("place = %d", config.place);
-    LOG_D("mem_size = %d", config.mem_size);
-    LOG_D("file_path = %s", config.file_path);
+    LOGD(LOG_TAG, "place = %d", config.place);
+    LOGD(LOG_TAG, "mem_size = %d", config.mem_size);
+    LOGD(LOG_TAG, "file_path = %s", config.file_path);
 
     mp_int_t status = self->player_obj->cache_config(&config);
     return mp_obj_new_int(status);
@@ -403,7 +405,7 @@ STATIC mp_obj_t uvoice_set_fade(mp_obj_t self_in, mp_obj_t out_period_in, mp_obj
     int out_period = mp_obj_get_int(out_period_in);
     int in_period = mp_obj_get_int(in_period_in);
 
-    LOG_D("fade out = %d, fade in = %d\n", out_period, in_period);
+    LOGD(LOG_TAG, "fade out = %d, fade in = %d\n", out_period, in_period);
 
     mp_int_t status = self->player_obj->set_fade(out_period, in_period);
     return mp_obj_new_int(status);
@@ -415,7 +417,7 @@ STATIC mp_obj_t uvoice_set_format(mp_obj_t self_in, mp_obj_t format_in)
     PLAYER_CHECK_PARAMS();
 
     media_format_t format = (media_format_t)mp_obj_get_int(format_in);
-    LOG_D("format = %d\n", format);
+    LOGD(LOG_TAG, "format = %d\n", format);
 
     mp_int_t status = self->player_obj->set_format(format);
     return mp_obj_new_int(status);
@@ -427,7 +429,7 @@ STATIC mp_obj_t uvoice_set_standby(mp_obj_t self_in, mp_obj_t msec_in)
     PLAYER_CHECK_PARAMS();
 
     int msec = mp_obj_get_int(msec_in);
-    LOG_D("msec = %d\n", msec);
+    LOGD(LOG_TAG, "msec = %d\n", msec);
 
     mp_int_t status = self->player_obj->set_standby(msec);
     return mp_obj_new_int(status);
@@ -439,7 +441,7 @@ STATIC mp_obj_t uvoice_eq_enable(mp_obj_t self_in, mp_obj_t enable_in)
     PLAYER_CHECK_PARAMS();
 
     int enable = mp_obj_get_int(enable_in);
-    LOG_D("enable = %d\n", enable);
+    LOGD(LOG_TAG, "enable = %d\n", enable);
 
     mp_int_t status = self->player_obj->eq_enable(enable);
     return mp_obj_new_int(status);
@@ -460,7 +462,7 @@ STATIC mp_obj_t uvoice_pcmdump_enable(mp_obj_t self_in, mp_obj_t enable_in)
     PLAYER_CHECK_PARAMS();
 
     int enable = mp_obj_get_int(enable_in);
-    LOG_D("enable = %d\n", enable);
+    LOGD(LOG_TAG, "enable = %d\n", enable);
 
     mp_int_t status = self->player_obj->pcmdump_enable(enable);
     return mp_obj_new_int(status);
@@ -494,11 +496,11 @@ STATIC mp_obj_t uvoice_get_mediainfo(mp_obj_t self_in)
     media_info_t info = {0};
     mp_int_t status = self->player_obj->get_mediainfo(&info);
     if (status != 0) {
-        LOG_E("failed to get mediainfo");
+        LOGE(LOG_TAG, "failed to get mediainfo");
         return mp_const_none;
     }
 
-    LOG_D(
+    LOGD(LOG_TAG, 
         "name=%s, author=%s, album=%s, year=%s, valid=%d, type=%d, "
         "bitrate=%d, media_size=%d, duration=%d, len = %d\n\n",
         info.name, info.author, info.album, info.year, info.valid, info.type,
@@ -534,7 +536,7 @@ STATIC mp_obj_t uvoice_format_support(mp_obj_t self_in, mp_obj_t format_in)
     PLAYER_CHECK_PARAMS();
 
     media_format_t format = (media_format_t)mp_obj_get_int(format_in);
-    LOG_D("format = %d\n", format);
+    LOGD(LOG_TAG, "format = %d\n", format);
 
     mp_int_t status = self->player_obj->format_support(format);
     return mp_obj_new_int(status);

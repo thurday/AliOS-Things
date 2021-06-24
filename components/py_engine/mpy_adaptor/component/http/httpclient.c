@@ -7,13 +7,13 @@
 #include "py/obj.h"
 #include "py/runtime.h"
 #include "py/builtin.h"
-#include "k_api.h"
-#include "HaasLog.h"
+
+#include "ulog/ulog.h"
 #include "httpclient.h"
 #include "aos/kernel.h"
 
 
-
+#define LOG_TAG "HTTP_CLIENT"
 
 #define REQ_BUF_SIZE 2048
 static char req_buf[REQ_BUF_SIZE];
@@ -72,14 +72,14 @@ typedef struct
 
 void http_client_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
     http_client_obj_t *self = MP_OBJ_TO_PTR(self_in);
     mp_printf(print, "ModuleName(%s)", self->ModuleName);
 }
 
 STATIC mp_obj_t http_client_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args)
 {
-    LOG_D("entern  %s;\n", __func__);
+    LOGD(LOG_TAG, "entern  %s;\n", __func__);
     http_client_obj_t* http_client_obj = m_new_obj(http_client_obj_t);
     if (!http_client_obj) {
         mp_raise_OSError(ENOMEM);
@@ -110,20 +110,20 @@ STATIC mp_obj_t http_client_new(const mp_obj_type_t *type, size_t n_args, size_t
 
 STATIC mp_obj_t obj_http_get(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("enter  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "enter  %s; n_args = %d;\n", __func__, n_args);
 
     int ret = -1;
     void* instance = NULL;
     if (n_args < 2)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     http_client_obj_t* http_client_obj = (http_client_obj_t *)self;
     if (http_client_obj == NULL)
     {
-        LOG_E("http_client_obj is NULL\n");
+        LOGE(LOG_TAG, "http_client_obj is NULL\n");
         return mp_const_none;
     }
     char *url = (char *)mp_obj_str_get_str(args[1]);
@@ -135,20 +135,20 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(mp_obj_http_client_get, 2, obj_http_get);
 
 STATIC mp_obj_t obj_http_put(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("enter  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "enter  %s; n_args = %d;\n", __func__, n_args);
 
     int ret = -1;
     void* instance = NULL;
     if (n_args < 2)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     http_client_obj_t* http_client_obj = (http_client_obj_t *)self;
     if (http_client_obj == NULL)
     {
-        LOG_E("http_client_obj is NULL\n");
+        LOGE(LOG_TAG, "http_client_obj is NULL\n");
         return mp_const_none;
     }
     char *url = (char *)mp_obj_str_get_str(args[1]);
@@ -159,20 +159,20 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(mp_obj_http_client_put, 2, obj_http_put);
 
 STATIC mp_obj_t obj_http_post(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("enter  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "enter  %s; n_args = %d;\n", __func__, n_args);
 
     int ret = -1;
     void* instance = NULL;
     if (n_args < 2)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     http_client_obj_t* http_client_obj = (http_client_obj_t *)self;
     if (http_client_obj == NULL)
     {
-        LOG_E("http_client_obj is NULL\n");
+        LOGE(LOG_TAG, "http_client_obj is NULL\n");
         return mp_const_none;
     }
     char *url = (char *)mp_obj_str_get_str(args[1]);
@@ -184,19 +184,19 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(mp_obj_http_client_post, 2, obj_http_post);
 
 STATIC mp_obj_t http_set_header(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("enter  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "enter  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 2)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     http_client_obj_t* http_client_obj = (http_client_obj_t *)self;
     if (http_client_obj == NULL)
     {
-        LOG_E("http_client_obj  is NULL\n");
+        LOGE(LOG_TAG, "http_client_obj  is NULL\n");
         return mp_const_none;
     }
 
@@ -209,19 +209,19 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(mp_obj_http_client_set_header, 2, http_set_he
 
 STATIC mp_obj_t http_set_data(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("enter  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "enter  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 3)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     http_client_obj_t* http_client_obj = (http_client_obj_t *)self;
     if (http_client_obj == NULL)
     {
-        LOG_E("http_client_obj  is NULL\n");
+        LOGE(LOG_TAG, "http_client_obj  is NULL\n");
         return mp_const_none;
     }
 
@@ -236,20 +236,20 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(mp_obj_http_client_set_data, 3, http_set_data
 
 STATIC mp_obj_t obj_http_header(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("enter  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "enter  %s; n_args = %d;\n", __func__, n_args);
 
     int ret = -1;
     void* instance = NULL;
     if (n_args < 2)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     http_client_obj_t* http_client_obj = (http_client_obj_t *)self;
     if (http_client_obj == NULL)
     {
-        LOG_E("http_client_obj is NULL\n");
+        LOGE(LOG_TAG, "http_client_obj is NULL\n");
         return mp_const_none;
     }
     char *url = (char *)mp_obj_str_get_str(args[1]);
@@ -260,20 +260,20 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(mp_obj_http_client_header, 2, obj_http_header
 
 STATIC mp_obj_t obj_http_conn(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("enter  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "enter  %s; n_args = %d;\n", __func__, n_args);
 
     int ret = -1;
     void* instance = NULL;
     if (n_args < 2)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     http_client_obj_t* http_client_obj = (http_client_obj_t *)self;
     if (http_client_obj == NULL)
     {
-        LOG_E("http_client_obj is NULL\n");
+        LOGE(LOG_TAG, "http_client_obj is NULL\n");
         return mp_const_none;
     }
     char *url = (char *)mp_obj_str_get_str(args[1]);
@@ -285,20 +285,20 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(mp_obj_http_client_conn, 2, obj_http_conn);
 
 STATIC mp_obj_t obj_http_recv(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("enter  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "enter  %s; n_args = %d;\n", __func__, n_args);
 
     int ret = -1;
     void* instance = NULL;
     if (n_args < 1)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     http_client_obj_t* http_client_obj = (http_client_obj_t *)self;
     if (http_client_obj == NULL)
     {
-        LOG_E("http_client_obj is NULL\n");
+        LOGE(LOG_TAG, "http_client_obj is NULL\n");
         return mp_const_none;
     }
     char *url = (char *)mp_obj_str_get_str(args[1]);
@@ -311,20 +311,20 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(mp_obj_http_client_recv, 1, obj_http_recv);
 
 STATIC mp_obj_t obj_http_send(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("enter  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "enter  %s; n_args = %d;\n", __func__, n_args);
 
     int ret = -1;
     void* instance = NULL;
     if (n_args < 3)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     http_client_obj_t* http_client_obj = (http_client_obj_t *)self;
     if (http_client_obj == NULL)
     {
-        LOG_E("http_client_obj is NULL\n");
+        LOGE(LOG_TAG, "http_client_obj is NULL\n");
         return mp_const_none;
     }
     char *url = (char *)mp_obj_str_get_str(args[1]);
@@ -340,20 +340,20 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(mp_obj_http_client_send, 3, obj_http_send);
 
 STATIC mp_obj_t obj_http_get_res_header_value(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("enter  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "enter  %s; n_args = %d;\n", __func__, n_args);
 
     int ret = -1;
     void* instance = NULL;
     if (n_args < 2)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     http_client_obj_t* http_client_obj = (http_client_obj_t *)self;
     if (http_client_obj == NULL)
     {
-        LOG_E("http_client_obj is NULL\n");
+        LOGE(LOG_TAG, "http_client_obj is NULL\n");
         return mp_const_none;
     }
     char *url = (char *)mp_obj_str_get_str(args[1]);
@@ -365,20 +365,20 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(mp_obj_get_res_header_value, 2, obj_http_get_
 
 STATIC mp_obj_t obj_http_get_res_code(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("enter  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "enter  %s; n_args = %d;\n", __func__, n_args);
 
     int ret = -1;
     void* instance = NULL;
     if (n_args < 1)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     http_client_obj_t* http_client_obj = (http_client_obj_t *)self;
     if (http_client_obj == NULL)
     {
-        LOG_E("http_client_obj is NULL\n");
+        LOGE(LOG_TAG, "http_client_obj is NULL\n");
         return mp_const_none;
     }
     char *url = (char *)mp_obj_str_get_str(args[1]);
@@ -393,20 +393,20 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(mp_obj_get_res_code, 1, obj_http_get_res_code
 
 STATIC mp_obj_t obj_http_get_add_text(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("enter  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "enter  %s; n_args = %d;\n", __func__, n_args);
 
     int ret = -1;
     void* instance = NULL;
     if (n_args < 6)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     http_client_obj_t* http_client_obj = (http_client_obj_t *)self;
     if (http_client_obj == NULL)
     {
-        LOG_E("http_client_obj is NULL\n");
+        LOGE(LOG_TAG, "http_client_obj is NULL\n");
         return mp_const_none;
     }
     char *content_disposition = (char *)mp_obj_str_get_str(args[1]);
@@ -424,20 +424,20 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(mp_obj_add_text, 6, obj_http_get_add_text);
 
 STATIC mp_obj_t obj_http_get_add_file(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("enter  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "enter  %s; n_args = %d;\n", __func__, n_args);
 
     int ret = -1;
     void* instance = NULL;
     if (n_args < 5)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     http_client_obj_t* http_client_obj = (http_client_obj_t *)self;
     if (http_client_obj == NULL)
     {
-        LOG_E("http_client_obj is NULL\n");
+        LOGE(LOG_TAG, "http_client_obj is NULL\n");
         return mp_const_none;
     }
     char *content_disposition = (char *)mp_obj_str_get_str(args[1]);
@@ -454,20 +454,20 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(mp_obj_add_file, 5, obj_http_get_add_file);
 
 STATIC mp_obj_t obj_http_delete(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("enter  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "enter  %s; n_args = %d;\n", __func__, n_args);
 
     int ret = -1;
     void* instance = NULL;
     if (n_args < 2)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     http_client_obj_t* http_client_obj = (http_client_obj_t *)self;
     if (http_client_obj == NULL)
     {
-        LOG_E("http_client_obj is NULL\n");
+        LOGE(LOG_TAG, "http_client_obj is NULL\n");
         return mp_const_none;
     }
     char *url = (char *)mp_obj_str_get_str(args[1]);
@@ -480,20 +480,20 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(mp_obj_delete, 2, obj_http_delete);
 
 STATIC mp_obj_t obj_http_reset(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("enter  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "enter  %s; n_args = %d;\n", __func__, n_args);
 
     int ret = -1;
     void* instance = NULL;
     if (n_args < 1)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     http_client_obj_t* http_client_obj = (http_client_obj_t *)self;
     if (http_client_obj == NULL)
     {
-        LOG_E("http_client_obj is NULL\n");
+        LOGE(LOG_TAG, "http_client_obj is NULL\n");
         return mp_const_none;
     }
     httpclient_reset(&http_client_obj->client);
@@ -504,20 +504,20 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(mp_obj_reset, 1, obj_http_reset);
 
 STATIC mp_obj_t obj_http_prepare(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("enter  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "enter  %s; n_args = %d;\n", __func__, n_args);
 
     int ret = -1;
     void* instance = NULL;
     if (n_args < 3)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     http_client_obj_t* http_client_obj = (http_client_obj_t *)self;
     if (http_client_obj == NULL)
     {
-        LOG_E("http_client_obj is NULL\n");
+        LOGE(LOG_TAG, "http_client_obj is NULL\n");
         return mp_const_none;
     }
     int header_size= mp_obj_get_int(args[1]);
@@ -532,20 +532,20 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(mp_obj_http_client_prepare, 3, obj_http_prepa
 
 STATIC mp_obj_t obj_http_unprepare(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("enter  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "enter  %s; n_args = %d;\n", __func__, n_args);
 
     int ret = -1;
     void* instance = NULL;
     if (n_args < 1)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     http_client_obj_t* http_client_obj = (http_client_obj_t *)self;
     if (http_client_obj == NULL)
     {
-        LOG_E("http_client_obj is NULL\n");
+        LOGE(LOG_TAG, "http_client_obj is NULL\n");
         return mp_const_none;
     }
     ret = httpclient_unprepare(&http_client_obj->client);
@@ -557,20 +557,20 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(mp_obj_http_client_unprapare, 1, obj_http_unp
 
 STATIC mp_obj_t obj_http_close(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("enter  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "enter  %s; n_args = %d;\n", __func__, n_args);
 
     int ret = -1;
     void* instance = NULL;
     if (n_args < 1)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     http_client_obj_t* http_client_obj = (http_client_obj_t *)self;
     if (http_client_obj == NULL)
     {
-        LOG_E("http_client_obj is NULL\n");
+        LOGE(LOG_TAG, "http_client_obj is NULL\n");
         return mp_const_none;
     }
     httpclient_clse(&http_client_obj->client);
@@ -581,20 +581,20 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(mp_obj_http_client_close, 1, obj_http_close);
 
 STATIC mp_obj_t obj_http_get_response(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("enter  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "enter  %s; n_args = %d;\n", __func__, n_args);
 
     int ret = -1;
     void* instance = NULL;
     if (n_args < 1)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     http_client_obj_t* http_client_obj = (http_client_obj_t *)self;
     if (http_client_obj == NULL)
     {
-        LOG_E("http_client_obj is NULL\n");
+        LOGE(LOG_TAG, "http_client_obj is NULL\n");
         return mp_const_none;
     }
 
@@ -663,7 +663,7 @@ static void task_http_download_func(char * url,char *filepath)
 
 STATIC mp_obj_t obj_http_download(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("enter  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "enter  %s; n_args = %d;\n", __func__, n_args);
     aos_task_t http_task;
     http_param_t *http_param = NULL;
     char *http_buffer = NULL;
@@ -673,14 +673,14 @@ STATIC mp_obj_t obj_http_download(size_t n_args, const mp_obj_t *args)
     void* instance = NULL;
     if (n_args < 3)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     http_client_obj_t* http_client_obj = (http_client_obj_t *)self;
     if (http_client_obj == NULL)
     {
-        LOG_E("http_client_obj is NULL\n");
+        LOGE(LOG_TAG, "http_client_obj is NULL\n");
         return mp_const_none;
     }
     char * url =  mp_obj_str_get_str(args[1]);
@@ -715,7 +715,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(mp_obj_http_download, 3, obj_http_download);
 
 STATIC mp_obj_t obj_http_request(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("enter  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "enter  %s; n_args = %d;\n", __func__, n_args);
     aos_task_t http_task;
     http_param_t *http_param = NULL;
     char *http_buffer = NULL;
@@ -725,14 +725,14 @@ STATIC mp_obj_t obj_http_request(size_t n_args, const mp_obj_t *args)
     void* instance = NULL;
     if (n_args < 3)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     http_client_obj_t* http_client_obj = (http_client_obj_t *)self;
     if (http_client_obj == NULL)
     {
-        LOG_E("http_client_obj is NULL\n");
+        LOGE(LOG_TAG, "http_client_obj is NULL\n");
         return mp_const_none;
     }
     char * url =  mp_obj_str_get_str(args[1]);
@@ -767,20 +767,20 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(mp_obj_http_request, 3, obj_http_request);
 
 STATIC mp_obj_t obj_HTTPConnection(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("enter  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "enter  %s; n_args = %d;\n", __func__, n_args);
 
     int ret = -1;
     void* instance = NULL;
     if (n_args < 2)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     http_client_obj_t* http_client_obj = (http_client_obj_t *)self;
     if (http_client_obj == NULL)
     {
-        LOG_E("http_client_obj is NULL\n");
+        LOGE(LOG_TAG, "http_client_obj is NULL\n");
         return mp_const_none;
     }
 

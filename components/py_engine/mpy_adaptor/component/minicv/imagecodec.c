@@ -6,9 +6,11 @@
 #include "py/obj.h"
 #include "py/runtime.h"
 #include "py/builtin.h"
-#include "k_api.h"
-#include "HaasLog.h"
+
+#include "ulog/ulog.h"
 #include "WrapperIHaasImageCodec.h"
+
+#define LOG_TAG "IMAGE_CODEC"
 
 extern const mp_obj_type_t minicv_imagecodec_type;
 // this is the actual C-structure for our new object
@@ -24,14 +26,14 @@ typedef struct
 
 void imagecodec_obj_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
     mp_imagecodec_obj_t *self = MP_OBJ_TO_PTR(self_in);
     mp_printf(print, "ModuleName(%s)", self->ModuleName);
 }
 
 STATIC mp_obj_t imagecodec_obj_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args)
 {
-    LOG_D("entern  %s;\n", __func__);
+    LOGD(LOG_TAG, "entern  %s;\n", __func__);
     mp_imagecodec_obj_t* driver_obj = m_new_obj(mp_imagecodec_obj_t);
     if (!driver_obj) {
         mp_raise_OSError(ENOMEM);
@@ -47,39 +49,39 @@ STATIC mp_obj_t imagecodec_obj_make_new(const mp_obj_type_t *type, size_t n_args
 
 STATIC mp_obj_t obj_open(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 2)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mp_imagecodec_obj_t* driver_obj = (mp_imagecodec_obj_t *)self;
     if (driver_obj == NULL)
     {
-        LOG_E("driver_obj is NULL\n");
+        LOGE(LOG_TAG, "driver_obj is NULL\n");
         return mp_const_none;
     }
 
     if (driver_obj->mInstance != NULL)
     {
-        LOG_E("Module has been opened, please clode first\n");
+        LOGE(LOG_TAG, "Module has been opened, please clode first\n");
         return mp_const_none;
     }
 
     driver_obj->mtype = (CodecImageType_t)mp_obj_get_int(args[1]);
-    LOG_D("%s:mtype = %d;\n", __func__, driver_obj->mtype);
+    LOGD(LOG_TAG, "%s:mtype = %d;\n", __func__, driver_obj->mtype);
     instance = ImageCodecCreateInstance(driver_obj->mtype);
     driver_obj->mInstance = instance;
     if (instance == NULL)
     {
-        LOG_E("ImageCodecCreateInstance failed\n");
+        LOGE(LOG_TAG, "ImageCodecCreateInstance failed\n");
         return mp_const_none;
     }
 
-    LOG_D("%s:out\n", __func__);
+    LOGD(LOG_TAG, "%s:out\n", __func__);
 
     return mp_const_none;
 }
@@ -87,32 +89,32 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(imagecodec_obj_open, 2, obj_open);
 
 STATIC mp_obj_t obj_close(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 1)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mp_imagecodec_obj_t* driver_obj = (mp_imagecodec_obj_t *)self;
     if (driver_obj == NULL)
     {
-        LOG_E("driver_obj is NULL\n");
+        LOGE(LOG_TAG, "driver_obj is NULL\n");
         return mp_const_none;
     }
 
     if (driver_obj->mInstance == NULL)
     {
-        LOG_E("Module has not been opened, not need close\n");
+        LOGE(LOG_TAG, "Module has not been opened, not need close\n");
         return mp_const_none;
     }
 
     ImageCodecDestoryInstance(driver_obj->mInstance);
     driver_obj->mtype = CODEC_IMAGE_SOURCE_NONE;
     driver_obj->mInstance = NULL;
-    LOG_D("%s:out\n", __func__);
+    LOGD(LOG_TAG, "%s:out\n", __func__);
 
     return mp_const_none;
 }
@@ -120,38 +122,38 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(imagecodec_obj_close, 1, obj_close);
 
 STATIC mp_obj_t obj_imgRead(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 2)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mp_imagecodec_obj_t* driver_obj = (mp_imagecodec_obj_t *)self;
     if (driver_obj == NULL)
     {
-        LOG_E("driver_obj is NULL\n");
+        LOGE(LOG_TAG, "driver_obj is NULL\n");
         return mp_const_none;
     }
 
     if (driver_obj->mInstance == NULL)
     {
-        LOG_E("Module has been closed, please open first\n");
+        LOGE(LOG_TAG, "Module has been closed, please open first\n");
         return mp_const_none;
     }
 
     ImageBuffer_t *image = NULL;
     char *mFileName = (char *)mp_obj_str_get_str(args[1]);
-    LOG_D("mFileName = %s;\n", mFileName);
+    LOGD(LOG_TAG, "mFileName = %s;\n", mFileName);
     ret = ImageCodecImgRead(driver_obj->mInstance, &image, mFileName);
     if (ret != 0)
     {
-        LOG_E("ImageCodecImgRead failed mFileName = %s;\n", mFileName);
+        LOGE(LOG_TAG, "ImageCodecImgRead failed mFileName = %s;\n", mFileName);
         return mp_const_none;
     }
-    LOG_D("%s:out image->address[0] = %p;image = %p;\n", __func__, image->address[0], image);
+    LOGD(LOG_TAG, "%s:out image->address[0] = %p;image = %p;\n", __func__, image->address[0], image);
 
     return MP_OBJ_FROM_PTR(image);
 }
@@ -159,38 +161,38 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(imagecodec_obj_imgRead, 2, obj_imgRead);
 
 STATIC mp_obj_t obj_imgReadMulti(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 2)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mp_imagecodec_obj_t* driver_obj = (mp_imagecodec_obj_t *)self;
     if (driver_obj == NULL)
     {
-        LOG_E("driver_obj is NULL\n");
+        LOGE(LOG_TAG, "driver_obj is NULL\n");
         return mp_const_none;
     }
 
     if (driver_obj->mInstance == NULL)
     {
-        LOG_E("Module has been closed, please open first\n");
+        LOGE(LOG_TAG, "Module has been closed, please open first\n");
         return mp_const_none;
     }
 
     ImageBuffer_t *image = NULL;
     char *mFileName = (char *)mp_obj_str_get_str(args[1]);
-    LOG_D("mFileName = %s;\n", mFileName);
+    LOGD(LOG_TAG, "mFileName = %s;\n", mFileName);
     ret = ImageCodecImgRead(driver_obj->mInstance, &image, mFileName);
     if (ret != 0)
     {
-        LOG_E("ImageCodecImgRead failed mFileName = %s;\n", mFileName);
+        LOGE(LOG_TAG, "ImageCodecImgRead failed mFileName = %s;\n", mFileName);
         return mp_const_none;
     }
-    LOG_D("%s:out image->address[0] = %p;image = %p;\n", __func__, image->address[0], image);
+    LOGD(LOG_TAG, "%s:out image->address[0] = %p;image = %p;\n", __func__, image->address[0], image);
 
     return MP_OBJ_FROM_PTR(image);
 }
@@ -198,38 +200,38 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(imagecodec_obj_imgReadMulti, 2, obj_imgReadMu
 
 STATIC mp_obj_t obj_imgWrite(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 3)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mp_imagecodec_obj_t* driver_obj = (mp_imagecodec_obj_t *)self;
     if (driver_obj == NULL)
     {
-        LOG_E("driver_obj is NULL\n");
+        LOGE(LOG_TAG, "driver_obj is NULL\n");
         return mp_const_none;
     }
 
     if (driver_obj->mInstance == NULL)
     {
-        LOG_E("Module has been closed, please open first\n");
+        LOGE(LOG_TAG, "Module has been closed, please open first\n");
         return mp_const_none;
     }
 
     ImageBuffer_t *image = (ImageBuffer_t *)MP_OBJ_TO_PTR(args[1]);
     char *mFileName = (char *)mp_obj_str_get_str(args[2]);
-    LOG_D("image = %p;\n", image);
-    LOG_D("mFileName = %s;\n", mFileName);
+    LOGD(LOG_TAG, "image = %p;\n", image);
+    LOGD(LOG_TAG, "mFileName = %s;\n", mFileName);
     ret = ImageCodecImgWrite(driver_obj->mInstance, image, mFileName);
     if (ret)
     {
-        LOG_E("%s:ImageCodecImgWrite failed\n", __func__);
+        LOGE(LOG_TAG, "%s:ImageCodecImgWrite failed\n", __func__);
     }
-    LOG_D("%s:out ret = %d;\n", __func__, ret);
+    LOGD(LOG_TAG, "%s:out ret = %d;\n", __func__, ret);
 
     return mp_const_none;
 }
@@ -237,38 +239,38 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(imagecodec_obj_imgWrite, 3, obj_imgWrite);
 
 STATIC mp_obj_t obj_imgWriteMulti(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 3)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mp_imagecodec_obj_t* driver_obj = (mp_imagecodec_obj_t *)self;
     if (driver_obj == NULL)
     {
-        LOG_E("driver_obj is NULL\n");
+        LOGE(LOG_TAG, "driver_obj is NULL\n");
         return mp_const_none;
     }
 
     if (driver_obj->mInstance == NULL)
     {
-        LOG_E("Module has been closed, please open first\n");
+        LOGE(LOG_TAG, "Module has been closed, please open first\n");
         return mp_const_none;
     }
 
     ImageBuffer_t **image = (ImageBuffer_t **)MP_OBJ_TO_PTR(args[1]);
     char *mFileName = (char *)mp_obj_str_get_str(args[2]);
-    LOG_D("image = %p;\n", image);
-    LOG_D("mFileName = %s;\n", mFileName);
+    LOGD(LOG_TAG, "image = %p;\n", image);
+    LOGD(LOG_TAG, "mFileName = %s;\n", mFileName);
     ret = ImageCodecImgWriteMulti(driver_obj->mInstance, image, mFileName);
     if (ret)
     {
-        LOG_E("%s:ImageCodecImgWriteMulti failed\n", __func__);
+        LOGE(LOG_TAG, "%s:ImageCodecImgWriteMulti failed\n", __func__);
     }
-    LOG_D("%s:out ret = %d;\n", __func__, ret);
+    LOGD(LOG_TAG, "%s:out ret = %d;\n", __func__, ret);
 
     return mp_const_none;
 }
@@ -276,38 +278,38 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(imagecodec_obj_imgWriteMulti, 3, obj_imgWrite
 
 STATIC mp_obj_t obj_imgDecode(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 3)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mp_imagecodec_obj_t* driver_obj = (mp_imagecodec_obj_t *)self;
     if (driver_obj == NULL)
     {
-        LOG_E("driver_obj is NULL\n");
+        LOGE(LOG_TAG, "driver_obj is NULL\n");
         return mp_const_none;
     }
 
     if (driver_obj->mInstance == NULL)
     {
-        LOG_E("Module has been closed, please open first\n");
+        LOGE(LOG_TAG, "Module has been closed, please open first\n");
         return mp_const_none;
     }
 
     void *addr = (void *)MP_OBJ_TO_PTR(args[1]);
     ImageBuffer_t **image = (ImageBuffer_t **)MP_OBJ_TO_PTR(args[2]);
-    LOG_D("addr = %p;\n", addr);
-    LOG_D("image = %p;\n", image);
+    LOGD(LOG_TAG, "addr = %p;\n", addr);
+    LOGD(LOG_TAG, "image = %p;\n", image);
     ret = ImageCodecImgDecode(driver_obj->mInstance, addr, image);
     if (ret)
     {
-        LOG_E("%s:ImageCodecImgDecode failed\n", __func__);
+        LOGE(LOG_TAG, "%s:ImageCodecImgDecode failed\n", __func__);
     }
-    LOG_D("%s:out ret = %d;\n", __func__, ret);
+    LOGD(LOG_TAG, "%s:out ret = %d;\n", __func__, ret);
 
     return mp_const_none;
 }
@@ -315,36 +317,36 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(imagecodec_obj_imgDecode, 3, obj_imgDecode);
 
 STATIC mp_obj_t obj_imgDecode2(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 2)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mp_imagecodec_obj_t* driver_obj = (mp_imagecodec_obj_t *)self;
     if (driver_obj == NULL)
     {
-        LOG_E("driver_obj is NULL\n");
+        LOGE(LOG_TAG, "driver_obj is NULL\n");
         return mp_const_none;
     }
 
     if (driver_obj->mInstance == NULL)
     {
-        LOG_E("Module has been closed, please open first\n");
+        LOGE(LOG_TAG, "Module has been closed, please open first\n");
         return mp_const_none;
     }
 
     char *mFileName = (char *)mp_obj_str_get_str(args[1]);
-    LOG_D("mFileName = %s;\n", mFileName);
+    LOGD(LOG_TAG, "mFileName = %s;\n", mFileName);
     ImageBuffer_t *image = ImageCodecImgDecode2(driver_obj->mInstance, mFileName);
     if (image == NULL)
     {
-        LOG_E("%s:ImageCodecImgDecode2 failed\n", __func__);
+        LOGE(LOG_TAG, "%s:ImageCodecImgDecode2 failed\n", __func__);
     }
-    LOG_D("%s:out image = %p;\n", __func__, image);
+    LOGD(LOG_TAG, "%s:out image = %p;\n", __func__, image);
 
     return MP_OBJ_FROM_PTR(image);
 }
@@ -352,38 +354,38 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(imagecodec_obj_imgDecode2, 2, obj_imgDecode2)
 
 STATIC mp_obj_t obj_imgEncode(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 3)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mp_imagecodec_obj_t* driver_obj = (mp_imagecodec_obj_t *)self;
     if (driver_obj == NULL)
     {
-        LOG_E("driver_obj is NULL\n");
+        LOGE(LOG_TAG, "driver_obj is NULL\n");
         return mp_const_none;
     }
 
     if (driver_obj->mInstance == NULL)
     {
-        LOG_E("Module has been closed, please open first\n");
+        LOGE(LOG_TAG, "Module has been closed, please open first\n");
         return mp_const_none;
     }
 
     void *addr = (void *)MP_OBJ_TO_PTR(args[1]);
     ImageBuffer_t **image = (ImageBuffer_t **)MP_OBJ_TO_PTR(args[2]);
-    LOG_D("addr = %p;\n", addr);
-    LOG_D("image = %p;\n", image);
+    LOGD(LOG_TAG, "addr = %p;\n", addr);
+    LOGD(LOG_TAG, "image = %p;\n", image);
     ret = ImageCodecImgEncode(driver_obj->mInstance, addr, image);
     if (ret)
     {
-        LOG_E("%s:ImageCodecImgEncode failed\n", __func__);
+        LOGE(LOG_TAG, "%s:ImageCodecImgEncode failed\n", __func__);
     }
-    LOG_D("%s:out ret = %d;\n", __func__, ret);
+    LOGD(LOG_TAG, "%s:out ret = %d;\n", __func__, ret);
 
     return mp_const_none;
 }
@@ -391,36 +393,36 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(imagecodec_obj_imgEncode, 3, obj_imgEncode);
 
 STATIC mp_obj_t obj_haveImageReader(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 2)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mp_imagecodec_obj_t* driver_obj = (mp_imagecodec_obj_t *)self;
     if (driver_obj == NULL)
     {
-        LOG_E("driver_obj is NULL\n");
+        LOGE(LOG_TAG, "driver_obj is NULL\n");
         return mp_const_none;
     }
 
     if (driver_obj->mInstance == NULL)
     {
-        LOG_E("Module has been closed, please open first\n");
+        LOGE(LOG_TAG, "Module has been closed, please open first\n");
         return mp_const_none;
     }
 
     char *mFileName = (char *)mp_obj_str_get_str(args[1]);
-    LOG_D("mFileName = %s;\n", mFileName);
+    LOGD(LOG_TAG, "mFileName = %s;\n", mFileName);
     ret = ImageCodechaveImageReader(driver_obj->mInstance, mFileName);
     if (ret)
     {
-        LOG_E("%s:ImageCodechaveImageReader failed\n", __func__);
+        LOGE(LOG_TAG, "%s:ImageCodechaveImageReader failed\n", __func__);
     }
-    LOG_D("%s:out ret = %d;\n", __func__, ret);
+    LOGD(LOG_TAG, "%s:out ret = %d;\n", __func__, ret);
 
     return mp_const_none;
 }
@@ -428,36 +430,36 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(imagecodec_obj_haveImageReader, 2, obj_haveIm
 
 STATIC mp_obj_t obj_haveImageWriter(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 2)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mp_imagecodec_obj_t* driver_obj = (mp_imagecodec_obj_t *)self;
     if (driver_obj == NULL)
     {
-        LOG_E("driver_obj is NULL\n");
+        LOGE(LOG_TAG, "driver_obj is NULL\n");
         return mp_const_none;
     }
 
     if (driver_obj->mInstance == NULL)
     {
-        LOG_E("Module has been closed, please open first\n");
+        LOGE(LOG_TAG, "Module has been closed, please open first\n");
         return mp_const_none;
     }
 
     char *mFileName = (char *)mp_obj_str_get_str(args[1]);
-    LOG_D("mFileName = %s;\n", mFileName);
+    LOGD(LOG_TAG, "mFileName = %s;\n", mFileName);
     ret = ImageCodechaveImageWriter(driver_obj->mInstance, mFileName);
     if (ret)
     {
-        LOG_E("%s:ImageCodechaveImageWriter failed\n", __func__);
+        LOGE(LOG_TAG, "%s:ImageCodechaveImageWriter failed\n", __func__);
     }
-    LOG_D("%s:out ret = %d;\n", __func__, ret);
+    LOGD(LOG_TAG, "%s:out ret = %d;\n", __func__, ret);
 
     return mp_const_none;
 }

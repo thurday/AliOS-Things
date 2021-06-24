@@ -513,6 +513,18 @@ STATIC mp_obj_t linkkit_init(size_t n_args, const mp_obj_t *args) {
         return -1;
     }
 
+#ifdef AOS_COMP_UAGENT
+    res = uagent_mqtt_client_set(mqtt_handle);
+    if (res != 0) {
+        printf("uAgent mqtt handle set failed ret = %d\n", res);
+    }
+
+    res = uagent_ext_comm_start(product_key, device_name);
+    if (res != 0) {
+        printf("uAgent ext comm  start failed ret = %d\n", res);
+    }
+#endif 
+
     /* 创建一个单独的线程, 专用于执行aiot_mqtt_process, 它会自动发送心跳保活, 以及重发QoS1的未应答报文 */
     g_mqtt_process_thread_running = 1;
     res = aos_task_new("demo_mqtt_process", demo_mqtt_process_thread, mqtt_handle, 4096);

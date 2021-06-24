@@ -6,9 +6,11 @@
 #include "py/obj.h"
 #include "py/runtime.h"
 #include "py/builtin.h"
-#include "k_api.h"
-#include "HaasLog.h"
+
+#include "ulog/ulog.h"
 #include "WrapperIHaasUI.h"
+
+#define LOG_TAG "UI"
 
 extern const mp_obj_type_t minicv_ui_type;
 // this is the actual C-structure for our new object
@@ -24,14 +26,14 @@ typedef struct
 
 void ui_obj_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
     mp_ui_obj_t *self = MP_OBJ_TO_PTR(self_in);
     mp_printf(print, "ModuleName(%s)", self->ModuleName);
 }
 
 STATIC mp_obj_t ui_obj_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args)
 {
-    LOG_D("entern  %s;\n", __func__);
+    LOGD(LOG_TAG, "entern  %s;\n", __func__);
     mp_ui_obj_t* driver_obj = m_new_obj(mp_ui_obj_t);
     if (!driver_obj) {
         mp_raise_OSError(ENOMEM);
@@ -47,38 +49,38 @@ STATIC mp_obj_t ui_obj_make_new(const mp_obj_type_t *type, size_t n_args, size_t
 
 STATIC mp_obj_t obj_open(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 2)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mp_ui_obj_t* driver_obj = (mp_ui_obj_t *)self;
     if (driver_obj == NULL)
     {
-        LOG_E("driver_obj is NULL\n");
+        LOGE(LOG_TAG, "driver_obj is NULL\n");
         return mp_const_none;
     }
 
     if (driver_obj->mInstance != NULL)
     {
-        LOG_E("Module has been opened, please clode first\n");
+        LOGE(LOG_TAG, "Module has been opened, please clode first\n");
         return mp_const_none;
     }
 
     driver_obj->mType = (UIFrameworkType_t)mp_obj_get_int(args[1]);
-    LOG_D("%s:mType = %d;\n", __func__, driver_obj->mType);
+    LOGD(LOG_TAG, "%s:mType = %d;\n", __func__, driver_obj->mType);
     instance = UICreateInstance(driver_obj->mType);
     driver_obj->mInstance = instance;
     if (instance == NULL)
     {
-        LOG_E("MLCreateInstance failed\n");
+        LOGE(LOG_TAG, "MLCreateInstance failed\n");
         return mp_const_none;
     }
-    LOG_D("%s:out\n", __func__);
+    LOGD(LOG_TAG, "%s:out\n", __func__);
 
     return mp_const_none;
 }
@@ -86,32 +88,32 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(ui_obj_open, 2, obj_open);
 
 STATIC mp_obj_t obj_close(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 1)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mp_ui_obj_t* driver_obj = (mp_ui_obj_t *)self;
     if (driver_obj == NULL)
     {
-        LOG_E("driver_obj is NULL\n");
+        LOGE(LOG_TAG, "driver_obj is NULL\n");
         return mp_const_none;
     }
 
     if (driver_obj->mInstance == NULL)
     {
-        LOG_E("Module has not been opened, not need close\n");
+        LOGE(LOG_TAG, "Module has not been opened, not need close\n");
         return mp_const_none;
     }
 
     UIDestoryInstance(driver_obj->mInstance);
     driver_obj->mType = UI_FRAMEWORK_NONE;
     driver_obj->mInstance = NULL;
-    LOG_D("%s:out\n", __func__);
+    LOGD(LOG_TAG, "%s:out\n", __func__);
 
     return mp_const_none;
 }
@@ -119,244 +121,244 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(ui_obj_close, 1, obj_close);
 
 STATIC mp_obj_t obj_getDisplayWidth(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 1)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mp_ui_obj_t* driver_obj = (mp_ui_obj_t *)self;
     if (driver_obj == NULL)
     {
-        LOG_E("driver_obj is NULL\n");
+        LOGE(LOG_TAG, "driver_obj is NULL\n");
         return mp_const_none;
     }
 
     if (driver_obj->mInstance == NULL)
     {
-        LOG_E("Module has been closed, please open first\n");
+        LOGE(LOG_TAG, "Module has been closed, please open first\n");
         return mp_const_none;
     }
 
     ret = UIGetDisplayWidth(driver_obj->mInstance);
 
-    LOG_D("%s:out ret = %d;\n", __func__, ret);
+    LOGD(LOG_TAG, "%s:out ret = %d;\n", __func__, ret);
     return MP_ROM_INT(ret);
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(ui_obj_getDisplayWidth, 1, obj_getDisplayWidth);
 
 STATIC mp_obj_t obj_getDisplayHeight(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 1)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mp_ui_obj_t* driver_obj = (mp_ui_obj_t *)self;
     if (driver_obj == NULL)
     {
-        LOG_E("driver_obj is NULL\n");
+        LOGE(LOG_TAG, "driver_obj is NULL\n");
         return mp_const_none;
     }
 
     if (driver_obj->mInstance == NULL)
     {
-        LOG_E("Module has been closed, please open first\n");
+        LOGE(LOG_TAG, "Module has been closed, please open first\n");
         return mp_const_none;
     }
 
     ret = UIGetDisplayHeight(driver_obj->mInstance);
 
-    LOG_D("%s:out ret = %d;\n", __func__, ret);
+    LOGD(LOG_TAG, "%s:out ret = %d;\n", __func__, ret);
     return MP_ROM_INT(ret);
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(ui_obj_getDisplayHeight, 1, obj_getDisplayHeight);
 
 STATIC mp_obj_t obj_getDisplayBacklight(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 1)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mp_ui_obj_t* driver_obj = (mp_ui_obj_t *)self;
     if (driver_obj == NULL)
     {
-        LOG_E("driver_obj is NULL\n");
+        LOGE(LOG_TAG, "driver_obj is NULL\n");
         return mp_const_none;
     }
 
     if (driver_obj->mInstance == NULL)
     {
-        LOG_E("Module has been closed, please open first\n");
+        LOGE(LOG_TAG, "Module has been closed, please open first\n");
         return mp_const_none;
     }
 
     ret = UIGetDisplayBacklight(driver_obj->mInstance);
 
-    LOG_D("%s:out ret = %d;\n", __func__, ret);
+    LOGD(LOG_TAG, "%s:out ret = %d;\n", __func__, ret);
     return MP_ROM_INT(ret);
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(ui_obj_getDisplayBacklight, 1, obj_getDisplayBacklight);
 
 STATIC mp_obj_t obj_setDisplayBacklight(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 2)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mp_ui_obj_t* driver_obj = (mp_ui_obj_t *)self;
     if (driver_obj == NULL)
     {
-        LOG_E("driver_obj is NULL\n");
+        LOGE(LOG_TAG, "driver_obj is NULL\n");
         return mp_const_none;
     }
 
     if (driver_obj->mInstance == NULL)
     {
-        LOG_E("Module has been closed, please open first\n");
+        LOGE(LOG_TAG, "Module has been closed, please open first\n");
         return mp_const_none;
     }
 
     int32_t value = (int32_t)mp_obj_get_int(args[1]);
     ret = UISetDisplayBacklight(driver_obj->mInstance, value);
 
-    LOG_D("%s:out ret = %d;\n", __func__, ret);
+    LOGD(LOG_TAG, "%s:out ret = %d;\n", __func__, ret);
     return MP_ROM_INT(ret);
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(ui_obj_setDisplayBacklight, 2, obj_setDisplayBacklight);
 
 STATIC mp_obj_t obj_getDisplayType(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 1)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mp_ui_obj_t* driver_obj = (mp_ui_obj_t *)self;
     if (driver_obj == NULL)
     {
-        LOG_E("driver_obj is NULL\n");
+        LOGE(LOG_TAG, "driver_obj is NULL\n");
         return mp_const_none;
     }
 
     if (driver_obj->mInstance == NULL)
     {
-        LOG_E("Module has been closed, please open first\n");
+        LOGE(LOG_TAG, "Module has been closed, please open first\n");
         return mp_const_none;
     }
 
     ret = UIGetDisplayType(driver_obj->mInstance);
 
-    LOG_D("%s:out ret = %d;\n", __func__, ret);
+    LOGD(LOG_TAG, "%s:out ret = %d;\n", __func__, ret);
     return MP_ROM_INT(ret);
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(ui_obj_getDisplayType, 1, obj_getDisplayType);
 
 STATIC mp_obj_t obj_getDisplayFreq(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 1)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mp_ui_obj_t* driver_obj = (mp_ui_obj_t *)self;
     if (driver_obj == NULL)
     {
-        LOG_E("driver_obj is NULL\n");
+        LOGE(LOG_TAG, "driver_obj is NULL\n");
         return mp_const_none;
     }
 
     if (driver_obj->mInstance == NULL)
     {
-        LOG_E("Module has been closed, please open first\n");
+        LOGE(LOG_TAG, "Module has been closed, please open first\n");
         return mp_const_none;
     }
 
     ret = UIGetDisplayFreq(driver_obj->mInstance);
 
-    LOG_D("%s:out ret = %d;\n", __func__, ret);
+    LOGD(LOG_TAG, "%s:out ret = %d;\n", __func__, ret);
     return MP_ROM_INT(ret);
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(ui_obj_getDisplayFreq, 1, obj_getDisplayFreq);
 
 STATIC mp_obj_t obj_setDisplayFreq(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 2)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mp_ui_obj_t* driver_obj = (mp_ui_obj_t *)self;
     if (driver_obj == NULL)
     {
-        LOG_E("driver_obj is NULL\n");
+        LOGE(LOG_TAG, "driver_obj is NULL\n");
         return mp_const_none;
     }
 
     if (driver_obj->mInstance == NULL)
     {
-        LOG_E("Module has been closed, please open first\n");
+        LOGE(LOG_TAG, "Module has been closed, please open first\n");
         return mp_const_none;
     }
 
     int32_t value = (int32_t)mp_obj_get_int(args[1]);
     ret = UISetDisplayFreq(driver_obj->mInstance, value);
 
-    LOG_D("%s:out ret = %d;\n", __func__, ret);
+    LOGD(LOG_TAG, "%s:out ret = %d;\n", __func__, ret);
     return MP_ROM_INT(ret);
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(ui_obj_setDisplayFreq, 2, obj_setDisplayFreq);
 
 STATIC mp_obj_t obj_drawPoint(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 4)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mp_ui_obj_t* driver_obj = (mp_ui_obj_t *)self;
     if (driver_obj == NULL)
     {
-        LOG_E("driver_obj is NULL\n");
+        LOGE(LOG_TAG, "driver_obj is NULL\n");
         return mp_const_none;
     }
 
     if (driver_obj->mInstance == NULL)
     {
-        LOG_E("Module has been closed, please open first\n");
+        LOGE(LOG_TAG, "Module has been closed, please open first\n");
         return mp_const_none;
     }
 
@@ -368,32 +370,32 @@ STATIC mp_obj_t obj_drawPoint(size_t n_args, const mp_obj_t *args)
     pt.y = y;
     ret = UIDrawPoint(driver_obj->mInstance, &pt, color);
 
-    LOG_D("%s:out ret = %d;\n", __func__, ret);
+    LOGD(LOG_TAG, "%s:out ret = %d;\n", __func__, ret);
     return MP_ROM_INT(ret);
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(ui_obj_drawPoint, 4, obj_drawPoint);
 
 STATIC mp_obj_t obj_drawLine(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 6)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mp_ui_obj_t* driver_obj = (mp_ui_obj_t *)self;
     if (driver_obj == NULL)
     {
-        LOG_E("driver_obj is NULL\n");
+        LOGE(LOG_TAG, "driver_obj is NULL\n");
         return mp_const_none;
     }
 
     if (driver_obj->mInstance == NULL)
     {
-        LOG_E("Module has been closed, please open first\n");
+        LOGE(LOG_TAG, "Module has been closed, please open first\n");
         return mp_const_none;
     }
 
@@ -410,32 +412,32 @@ STATIC mp_obj_t obj_drawLine(size_t n_args, const mp_obj_t *args)
     end_pt.y = endy;
     ret = UIDrawLine(driver_obj->mInstance, &start_pt, &end_pt, color);
 
-    LOG_D("%s:out ret = %d;\n", __func__, ret);
+    LOGD(LOG_TAG, "%s:out ret = %d;\n", __func__, ret);
     return MP_ROM_INT(ret);
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(ui_obj_drawLine, 6, obj_drawLine);
 
 STATIC mp_obj_t obj_drawRectangle(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 6)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mp_ui_obj_t* driver_obj = (mp_ui_obj_t *)self;
     if (driver_obj == NULL)
     {
-        LOG_E("driver_obj is NULL\n");
+        LOGE(LOG_TAG, "driver_obj is NULL\n");
         return mp_const_none;
     }
 
     if (driver_obj->mInstance == NULL)
     {
-        LOG_E("Module has been closed, please open first\n");
+        LOGE(LOG_TAG, "Module has been closed, please open first\n");
         return mp_const_none;
     }
 
@@ -446,32 +448,32 @@ STATIC mp_obj_t obj_drawRectangle(size_t n_args, const mp_obj_t *args)
     int32_t color = (int32_t)mp_obj_get_int(args[5]);
     ret = UIDrawRectangle(driver_obj->mInstance, left, top, right, bottom, color);
 
-    LOG_D("%s:out ret = %d;\n", __func__, ret);
+    LOGD(LOG_TAG, "%s:out ret = %d;\n", __func__, ret);
     return MP_ROM_INT(ret);
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(ui_obj_drawRectangle, 6, obj_drawRectangle);
 
 STATIC mp_obj_t obj_drawCircle(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 5)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mp_ui_obj_t* driver_obj = (mp_ui_obj_t *)self;
     if (driver_obj == NULL)
     {
-        LOG_E("driver_obj is NULL\n");
+        LOGE(LOG_TAG, "driver_obj is NULL\n");
         return mp_const_none;
     }
 
     if (driver_obj->mInstance == NULL)
     {
-        LOG_E("Module has been closed, please open first\n");
+        LOGE(LOG_TAG, "Module has been closed, please open first\n");
         return mp_const_none;
     }
 
@@ -484,32 +486,32 @@ STATIC mp_obj_t obj_drawCircle(size_t n_args, const mp_obj_t *args)
     pt.y = y;
     ret = UIDrawCircle(driver_obj->mInstance, &pt, radius, color);
 
-    LOG_D("%s:out ret = %d;\n", __func__, ret);
+    LOGD(LOG_TAG, "%s:out ret = %d;\n", __func__, ret);
     return MP_ROM_INT(ret);
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(ui_obj_drawCircle, 5, obj_drawCircle);
 
 STATIC mp_obj_t obj_drawText(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 8)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mp_ui_obj_t* driver_obj = (mp_ui_obj_t *)self;
     if (driver_obj == NULL)
     {
-        LOG_E("driver_obj is NULL\n");
+        LOGE(LOG_TAG, "driver_obj is NULL\n");
         return mp_const_none;
     }
 
     if (driver_obj->mInstance == NULL)
     {
-        LOG_E("Module has been closed, please open first\n");
+        LOGE(LOG_TAG, "Module has been closed, please open first\n");
         return mp_const_none;
     }
 
@@ -522,32 +524,32 @@ STATIC mp_obj_t obj_drawText(size_t n_args, const mp_obj_t *args)
     int32_t bottom = (int32_t)mp_obj_get_int(args[7]);
     UIDrawText(driver_obj->mInstance, text, size, color, left, top, right, bottom);
 
-    LOG_D("%s:out\n", __func__);
+    LOGD(LOG_TAG, "%s:out\n", __func__);
     return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(ui_obj_drawText, 8, obj_drawText);
 
 STATIC mp_obj_t obj_drawPixels(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 6)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mp_ui_obj_t* driver_obj = (mp_ui_obj_t *)self;
     if (driver_obj == NULL)
     {
-        LOG_E("driver_obj is NULL\n");
+        LOGE(LOG_TAG, "driver_obj is NULL\n");
         return mp_const_none;
     }
 
     if (driver_obj->mInstance == NULL)
     {
-        LOG_E("Module has been closed, please open first\n");
+        LOGE(LOG_TAG, "Module has been closed, please open first\n");
         return mp_const_none;
     }
 
@@ -561,32 +563,32 @@ STATIC mp_obj_t obj_drawPixels(size_t n_args, const mp_obj_t *args)
     pt.y = y;
     ret = UIDrawPixels(driver_obj->mInstance, pixels, &pt, width, height);
 
-    LOG_D("%s:out ret = %d;\n", __func__, ret);
+    LOGD(LOG_TAG, "%s:out ret = %d;\n", __func__, ret);
     return MP_ROM_INT(ret);
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(ui_obj_drawPixels, 6, obj_drawPixels);
 
 STATIC mp_obj_t obj_drawImage(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 6)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mp_ui_obj_t* driver_obj = (mp_ui_obj_t *)self;
     if (driver_obj == NULL)
     {
-        LOG_E("driver_obj is NULL\n");
+        LOGE(LOG_TAG, "driver_obj is NULL\n");
         return mp_const_none;
     }
 
     if (driver_obj->mInstance == NULL)
     {
-        LOG_E("Module has been closed, please open first\n");
+        LOGE(LOG_TAG, "Module has been closed, please open first\n");
         return mp_const_none;
     }
 
@@ -600,38 +602,38 @@ STATIC mp_obj_t obj_drawImage(size_t n_args, const mp_obj_t *args)
     pt.y = y;
     ret = UIDrawImage(driver_obj->mInstance, path, &pt, width, height);
 
-    LOG_D("%s:out ret = %d;\n", __func__, ret);
+    LOGD(LOG_TAG, "%s:out ret = %d;\n", __func__, ret);
     return MP_ROM_INT(ret);
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(ui_obj_drawImage, 6, obj_drawImage);
 
 STATIC mp_obj_t obj_updateDisplay(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("entern  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "entern  %s; n_args = %d;\n", __func__, n_args);
     int ret = -1;
     void* instance = NULL;
     if (n_args < 1)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mp_ui_obj_t* driver_obj = (mp_ui_obj_t *)self;
     if (driver_obj == NULL)
     {
-        LOG_E("driver_obj is NULL\n");
+        LOGE(LOG_TAG, "driver_obj is NULL\n");
         return mp_const_none;
     }
 
     if (driver_obj->mInstance == NULL)
     {
-        LOG_E("Module has been closed, please open first\n");
+        LOGE(LOG_TAG, "Module has been closed, please open first\n");
         return mp_const_none;
     }
 
     UIUpdateDisplay(driver_obj->mInstance);
 
-    LOG_D("%s:out\n", __func__);
+    LOGD(LOG_TAG, "%s:out\n", __func__);
     return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(ui_obj_updateDisplay, 1, obj_updateDisplay);

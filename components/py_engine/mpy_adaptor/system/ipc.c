@@ -5,7 +5,7 @@
 #include "py/obj.h"
 #include "py/runtime.h"
 #include "py/builtin.h"
-#include "k_api.h"
+
 
 extern const mp_obj_type_t pyb_ipc_type;
 // this is the actual C-structure for our new object

@@ -18,6 +18,7 @@ depends:
   - cli: rel_3.3.0
   - osal_aos: rel_3.3.0
   - ulog: rel_3.3.0
+  - uagent: rel_3.3.0
   - kv: rel_3.3.0
   - mbedtls: rel_3.3.0
   - cjson: rel_3.3.0
@@ -25,6 +26,7 @@ depends:
   - vfs: rel_3.3.0
   - amp_adapter: rel_3.3.0
   - oss: "rel_3.3.0 ? <PY_BUILD_OSS>"
+  - ucamera: "rel_3.3.0 ? <PY_BUILD_UCAMERA>"
   - linksdk: "rel_3.3.0 ? <PY_BUILD_LINKSDK>"
   - netmgr: "rel_3.3.0 ? <PY_BUILD_NETMGR>"
   - lwip: rel_3.3.0
@@ -37,7 +39,7 @@ depends:
   - ble_host: "rel_3.3.0 ? <PY_BUILD_BLENETCONFIG>"
   - sntp: "rel_3.3.0 ? <PY_BUILD_SNTP>"
   - mbedtls: "rel_3.3.0 ? <PY_BUILD_MBEDTLS>"
-  - mbmaster: "rel_3.3.0 ? <PY_BUILD_MODBUS>"
+  - mbrel_3.3.0: "rel_3.3.0 ? <PY_BUILD_MODBUS>"
   
   
 ## 第四部分：编译连接信息
@@ -63,6 +65,7 @@ build_config:
     UVOICE_EVENT_BY_BUFFER_QUEUE: 1 ? <PY_BUILD_AUDIO>
 
   include:
+    - example/
     - unzip/internal/
     - unzip/include/
     - mpy_engine/
@@ -91,6 +94,11 @@ build_config:
     - mpy_adaptor/component/minicv/base/modules/c/include/
     - mpy_adaptor/component/minicv/base/modules/core/include/
     - mpy_adaptor/component/minicv/base/modules/ml/include/
+
+    - mpy_adaptor/platform/haas/ ? <BOARD_HAAS100>
+    - mpy_adaptor/platform/haas/ ? <BOARD_HAASEDUK1>
+    - mpy_adaptor/platform/haas/ ? <BOARD_HAAS200>
+    - mpy_adaptor/platform/threadx-ec100y/ ? <BOARD_HAAS600>
 
 
   prebuild_script: create_python_home.py
@@ -303,7 +311,7 @@ source_file:                             # <可选项> 指定参与编译的源�
   - mpy_adaptor/system/moduos.c ? <PY_BUILD_UOS>
   - mpy_adaptor/system/_frozen_mpy.c
   - mpy_adaptor/system/mphalport.c
-  - mpy_adaptor/system/mphalport.c
+  - mpy_adaptor/system/mpsalport.c
   - mpy_adaptor/system/mpthreadport.c
   - mpy_adaptor/system/utility.c
   - mpy_adaptor/system/help.c
@@ -335,8 +343,9 @@ source_file:                             # <可选项> 指定参与编译的源�
   - mpy_adaptor/component/minicv/videocodec.c
   - mpy_adaptor/component/netmgr/modnetmgr.c ? <PY_BUILD_NETMGR>
   - mpy_adaptor/component/ble_netconfig/modblenetconfig.c ? <PY_BUILD_BLENETCONFIG>
-  - mpy_adaptor/component/http/modhttp.c ? <PY_BUILD_HTTP>
-  - mpy_adaptor/component/http/httpclient.c ? <PY_BUILD_HTTP>
+  # - mpy_adaptor/component/http/modhttp.c ? <PY_BUILD_HTTP>
+  # - mpy_adaptor/component/http/httpclient.c ? <PY_BUILD_HTTP>
+  - mpy_adaptor/network/http/modhttp.c ? <PY_BUILD_HTTP>
   - mpy_adaptor/component/tcp/modtcp.c ? <PY_BUILD_TCP>
   - mpy_adaptor/component/udp/modudp.c ? <PY_BUILD_UDP>
   - mpy_adaptor/component/mqtt/modmqtt.c ? <PY_BUILD_MQTT>
@@ -348,6 +357,7 @@ source_file:                             # <可选项> 指定参与编译的源�
   - mpy_adaptor/component/audio/uvoicerecorder.c ? <PY_BUILD_AUDIO>
   - mpy_adaptor/component/audio/uvoicetts.c ? <PY_BUILD_AUDIO>
   - mpy_adaptor/component/oss/modoss.c ? <PY_BUILD_OSS>
+  - mpy_adaptor/component/ucamera/moducamera.c ? <PY_BUILD_UCAMERA>
   - mpy_adaptor/component/sntp/modsntp.c ? <PY_BUILD_SNTP>
   - mpy_adaptor/component/modbus/modbus.c ? <PY_BUILD_MODBUS>
   # mpy_adaptor/component/minicv
@@ -361,6 +371,10 @@ source_file:                             # <可选项> 指定参与编译的源�
   - mpy_adaptor/component/minicv/base/modules/ml/src/HaasML.cpp ? <PY_BUILD_AI>
   - mpy_adaptor/component/minicv/base/modules/ml/src/HaasMLCloud.cpp ? <PY_BUILD_AI>
   - mpy_adaptor/component/minicv/base/modules/ml/src/HaasMLMnn.cpp ? <PY_BUILD_AI>
+  # ulog
+  - mpy_adaptor/component/ulog/modlog.c ? <PY_BUILD_ULOG>
+  # ota
+  - mpy_adaptor/component/ota/modappota.c ? <PY_BUILD_OTA>
 
 ## 第五部分：配置信息
 # def_config:                              # 组件的可配置项
@@ -373,6 +387,9 @@ def_config:
   LINKSDK_DEMO_MQTT_BCAST: n       #MQTT连IoT平台接收广播推送演示
   LINKSDK_DEMO_MQTT_RRPC: n        #MQTT连IoT平台RRPC演示
   CLI_IOBOX_ENABLE: 1              # Enable iobox cmd
+  ULOG_CONFIG_ASYNC: 1
+  ULOG_CONFIG_POP_FS: 1
+  ULOG_CONFIG_POP_UDP: 1
   
   #以下是Python引擎模块编译选项，1 为打开，0 为关闭
   PY_BUILD_FATFS: 1                # Py_Engine module build FATFS Flag
@@ -386,9 +403,12 @@ def_config:
   PY_BUILD_AUDIO: 1                # Py_Engine module build uvoice config
   PY_BUILD_UOS: 1                  # Py_Engine module build uos config
   PY_BUILD_OSS: 1                  # Py_Engine module build oss config
+  PY_BUILD_UCAMERA: 0              # Py_Engine module build ucamera config
   PY_BUILD_BLENETCONFIG: 1         # Py_Engine module build ble net config
   PY_BUILD_SNTP: 1                 # Py_Engine module build sntptime config
   PY_BUILD_MODBUS: 1               # Py_Engine module build modbus config
+  PY_BUILD_ULOG: 1                 # Py_Engine module build ulog config
+  PY_BUILD_OTA: 1                  # Py_Engine module build OTA config
 
   PY_BUILD_MBEDTLS: 1             # Py_Engine module build mbed TLS
   MBEDTLS_CTR_DRBG_C: 1

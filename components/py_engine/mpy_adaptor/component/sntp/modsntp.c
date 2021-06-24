@@ -9,7 +9,9 @@
 
 #include "sntp/sntp.h"
 
-#include "HaasLog.h"
+#include "ulog/ulog.h"
+
+#define LOG_TAG "MOD_SNTP"
 
 #define SNTP_RCV_TIMEOUT                (5000)
 #define SNTP_PERSERV_RETRY_TIMES        (2)
@@ -27,16 +29,16 @@ static int retry_backoff_time[]= {
 static void sntp_config_servaddr(void)
 {
     int i = 0;
-    LOG_D("sntp config servadd start.");
+    LOGD(LOG_TAG, "sntp config servadd start.");
     for (i = 0; i < SNTP_MAX_SERVERS; i++) {
         if (0 != sntp_set_server(i, m_sntp_servaddr[i])) {
-            LOG_E("set sntp server:%s failed\n", m_sntp_servaddr[i]);
+            LOGE(LOG_TAG, "set sntp server:%s failed\n", m_sntp_servaddr[i]);
         }
         else {
-            LOG_I("set sntp server:%s successfully\n", m_sntp_servaddr[i]);
+            LOGI(LOG_TAG, "set sntp server:%s successfully\n", m_sntp_servaddr[i]);
         }
     }
-    LOG_I("sntp config servadd end.");
+    LOGI(LOG_TAG, "sntp config servadd end.");
 }
 
 static bool sntp_gettime(struct timeval *ntp_time)
@@ -48,18 +50,18 @@ static bool sntp_gettime(struct timeval *ntp_time)
             SNTP_PERSERV_RETRY_TIMES};
 
     while(1) {
-        LOG_D("sntp getting time.");
+        LOGD(LOG_TAG, "sntp getting time.");
         sntp_config_servaddr();
         if (0 == sntp_get_time(&m_sntp_arg, ntp_time)) {
-            LOG_I("[sntp] OK: sec %ld usec %ld\n", ntp_time->tv_sec, ntp_time->tv_usec);
+            LOGI(LOG_TAG, "[sntp] OK: sec %ld usec %ld\n", ntp_time->tv_sec, ntp_time->tv_usec);
             return true;
         } else {
             int retry_time = retry_backoff_time[round];
-            LOG_I("[sntp] wait for sntp done...e\n");
+            LOGI(LOG_TAG, "[sntp] wait for sntp done...e\n");
             if(round < sizeof(retry_backoff_time)/sizeof(int) - 1) {
                 round ++;
             } else {
-                LOG_E("[sntp] Failed to get SNTP from server\n");
+                LOGE(LOG_TAG, "[sntp] Failed to get SNTP from server\n");
                 return false;
             }
             aos_msleep(retry_time * 1000);

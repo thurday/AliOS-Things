@@ -44,7 +44,7 @@
 #include "py/mpthread.h"
 #include "extmod/vfs.h"
 #include "extmod/misc.h"
-#include "HaasLog.h"
+#include "ulog/ulog.h"
 #include "genhdr/mpversion.h"
 #include "aos/kernel.h"
 #include "dirent.h"
@@ -52,6 +52,8 @@
 #if MICROPY_VFS_POSIX
 #include "vfs_posix.h"
 #endif
+
+#define LOG_TAG "MOD_OS"
 
 extern const mp_obj_type_t mp_fat_vfs_type;
 
@@ -289,7 +291,7 @@ static int py_mv(char *from, char *to)
     from = py_get_realpath(from, abspath_from, sizeof(abspath_from));
     to = py_get_realpath(to, abspath_to, sizeof(abspath_to));
     if (!from || !to) {
-        LOG_E("Failed to get real path!\r\n");
+        LOGE(LOG_TAG, "Failed to get real path!\r\n");
         return -1;
     }
 
@@ -302,7 +304,7 @@ static int py_mv(char *from, char *to)
             else
                 ret = asprintf(&to, "%s%s", to, p);
             if (ret < 0) {
-                LOG_E("asprintf failed\n");
+                LOGE(LOG_TAG, "asprintf failed\n");
                 return -1;
             }
             isdir = true;
@@ -311,7 +313,7 @@ static int py_mv(char *from, char *to)
 
     ret = rename(from, to);
     if (ret < 0 && errno != EXDEV) {
-        LOG_E("rename %s to %s failed - %s\n", from, to, strerror(errno));
+        LOGE(LOG_TAG, "rename %s to %s failed - %s\n", from, to, strerror(errno));
         return -1;
     } else if (ret == 0) {
         return 0;
@@ -319,32 +321,32 @@ static int py_mv(char *from, char *to)
 
     fd_from = open(from, O_RDONLY);
     if (fd_from < 0) {
-        LOG_E("open %s failed - %s\n", from, strerror(errno));
+        LOGE(LOG_TAG, "open %s failed - %s\n", from, strerror(errno));
         return -1;
     }
 
     fd_to = open(to, O_WRONLY | O_CREAT | O_TRUNC);
     if (fd_to < 0) {
-        LOG_E("open %s failed - %s\n", to, strerror(errno));
+        LOGE(LOG_TAG, "open %s failed - %s\n", to, strerror(errno));
         goto close_from;
     }
 
     while ((rlen = read(fd_from, buf, 128))) {
         if (rlen < 0) {
-            LOG_E("read %s failed - %s\n", from, strerror(errno));
+            LOGE(LOG_TAG, "read %s failed - %s\n", from, strerror(errno));
             goto close_to;
         }
 
         wlen = write(fd_to, buf, rlen);
         if (wlen != rlen) {
-            LOG_E("write %s failed - %s\n", to, strerror(errno));
+            LOGE(LOG_TAG, "write %s failed - %s\n", to, strerror(errno));
             goto close_to;
         }
     }
 
     ret = unlink(from);
     if (ret) {
-        LOG_E("unlink %s failed - %s\n", from, strerror(errno));
+        LOGE(LOG_TAG, "unlink %s failed - %s\n", from, strerror(errno));
         goto close_to;
     }
 
@@ -389,13 +391,13 @@ int py_rrmdir(const char *path)
     }
 
     if (stat(dir, &s) || !S_ISDIR(s.st_mode)) {
-        LOG_E("%s is neither existed nor a directory\n", dir);
+        LOGE(LOG_TAG, "%s is neither existed nor a directory\n", dir);
         goto out;
     }
 
     pdir = opendir(dir);
     if (!pdir) {
-        LOG_E("opendir %s failed - %s\n", dir, strerror(errno));
+        LOGE(LOG_TAG, "opendir %s failed - %s\n", dir, strerror(errno));
         goto out;
     }
 
@@ -407,7 +409,7 @@ int py_rrmdir(const char *path)
 
         ret = stat(fpath, &s);
         if (ret) {
-            LOG_E("stat %s failed\n", fpath);
+            LOGE(LOG_TAG, "stat %s failed\n", fpath);
             break;
         }
 
@@ -426,7 +428,7 @@ int py_rrmdir(const char *path)
     if (ret == 0) {
         ret = rmdir(dir);
         if (ret)
-            LOG_E("rmdir %s failed\n", dir);
+            LOGE(LOG_TAG, "rmdir %s failed\n", dir);
     }
 out:
     free(dir);
@@ -498,7 +500,7 @@ static int py_mkdir_do(char *path, int flags)
     #define MKDIR_FLAGS_PARENTS (1 << 0)
     path = py_get_realpath(path, abspath, sizeof(abspath));
     if (!path) {
-        LOG_E("Failed to get real path!\r\n");
+        LOGE(LOG_TAG, "Failed to get real path!\r\n");
         return -1;
     }
 
@@ -508,7 +510,7 @@ static int py_mkdir_do(char *path, int flags)
      */
 #define MOUNT_BASE_DIR "/"
     if (strncmp(path, MOUNT_BASE_DIR, strlen(MOUNT_BASE_DIR))) {
-        LOG_E("make directory must base on %s\n", MOUNT_BASE_DIR);
+        LOGE(LOG_TAG, "make directory must base on %s\n", MOUNT_BASE_DIR);
         return -1;
     }
 
@@ -536,12 +538,12 @@ static int py_mkdir_do(char *path, int flags)
         if (!stat(path, &st)) {
             if (S_ISDIR(st.st_mode))
                 goto next;
-            LOG_E("make failed - %s already existed and not direcotry\n", path);
+            LOGE(LOG_TAG, "make failed - %s already existed and not direcotry\n", path);
             return -1;
         }
 
         if (mkdir(path, 0777) < 0) {
-            LOG_E("mkdir %s failed\n", path);
+            LOGE(LOG_TAG, "mkdir %s failed\n", path);
             return -1;
         }
 

@@ -134,7 +134,6 @@ class TelnetToSerial:
                 if self.read_timeout is not None and timeout_count > 4 * self.read_timeout:
                     break
                 timeout_count += 1
-
         data = b""
         while len(data) < size and len(self.fifo) > 0:
             data += bytes([self.fifo.popleft()])
@@ -266,15 +265,22 @@ class Pyboard:
 
             delayed = False
             for attempt in range(wait + 1):
+                
+                
+                self.serial = serial.Serial()
+                self.serial.port = device
+                self.serial.baudrate = baudrate
+                self.serial.parity = "N"
+                self.serial.bytesize = 8
+                self.serial.stopbits = 1
+                self.serial.timeout = 0.05
+
                 try:
-                    self.serial = serial.Serial(device, baudrate=baudrate, interCharTimeout=1)
-                    break
-                except (OSError, IOError):  # Py2 and Py3 have different errors
-                    if wait == 0:
-                        continue
-                    if attempt == 0:
-                        sys.stdout.write("Waiting {} seconds for pyboard ".format(wait))
-                        delayed = True
+                    self.serial.open()
+                except Exception as e:
+                    raise Exception("Failed to open serial port: %s!" % device)
+                break
+                
                 time.sleep(1)
                 sys.stdout.write(".")
                 sys.stdout.flush()
@@ -285,8 +291,19 @@ class Pyboard:
             if delayed:
                 print("")
 
+
     def close(self):
         self.serial.close()
+
+
+    def run_cmd(self,cmd):
+        self.serial.write(cmd)
+
+    def run_cmd_follow(self,cmd,ending,timeout = 10):
+        self.serial.write(cmd)
+        return self.read_until(1,ending,timeout)
+
+
 
     def read_until(self, min_num_bytes, ending, timeout=10, data_consumer=None):
         # if data_consumer is used then data is not accumulated and the ending must be 1 byte long
@@ -310,13 +327,16 @@ class Pyboard:
             else:
                 timeout_count += 1
                 if timeout is not None and timeout_count >= 100 * timeout:
+                    print("Error:Waiting for  %s  timeout" %(ending.decode('utf-8')))
                     break
                 time.sleep(0.01)
         return data
 
-    def enter_raw_repl(self):
-        self.serial.write(b"\r\x03\x03")  # ctrl-C twice: interrupt any running program
 
+
+    def enter_raw_repl(self):
+        self.serial.write(b"python\r\n")  # ctrl-C twice: interrupt any running program
+        time.sleep(0.05)
         # flush input (without relying on serial.flushInput())
         n = self.serial.inWaiting()
         while n > 0:
@@ -324,25 +344,30 @@ class Pyboard:
             n = self.serial.inWaiting()
 
         self.serial.write(b"\r\x01")  # ctrl-A: enter raw REPL
-        data = self.read_until(1, b"raw REPL; CTRL-B to exit\r\n>")
-        if not data.endswith(b"raw REPL; CTRL-B to exit\r\n>"):
-            print(data)
-            raise PyboardError("could not enter raw repl")
-
-        self.serial.write(b"\x04")  # ctrl-D: soft reset
-        data = self.read_until(1, b"soft reboot\r\n")
-        if not data.endswith(b"soft reboot\r\n"):
-            print(data)
-            raise PyboardError("could not enter raw repl")
-        # By splitting this into 2 reads, it allows boot.py to print stuff,
-        # which will show up after the soft reboot and before the raw REPL.
+        time.sleep(0.05)
         data = self.read_until(1, b"raw REPL; CTRL-B to exit\r\n")
         if not data.endswith(b"raw REPL; CTRL-B to exit\r\n"):
-            print(data)
             raise PyboardError("could not enter raw repl")
 
+        # self.serial.write(b"\x04")  # ctrl-D: soft reset
+        # data = self.read_until(1, b"soft reboot\r\n")
+        # if not data.endswith(b"soft reboot\r\n"):
+        #     print(data)
+        #     raise PyboardError("could not enter raw repl")
+        # By splitting this into 2 reads, it allows boot.py to print stuff,
+        # which will show up after the soft reboot and before the raw REPL.
+        # data = self.read_until(1, b"raw REPL; CTRL-B to exit\r\n")
+        # if not data.endswith(b"raw REPL; CTRL-B to exit\r\n"):
+        #     print(data)
+        #     raise PyboardError("could not enter raw repl")
+
     def exit_raw_repl(self):
+        time.sleep(0.05)
         self.serial.write(b"\r\x02")  # ctrl-B: enter friendly REPL
+
+    def exit_python_mode(self):
+        time.sleep(0.05)
+        self.serial.write(b"\r\x04")  # ctrl-D: enter friendly REPL
 
     def follow(self, timeout, data_consumer=None):
         # wait for normal output
@@ -405,7 +430,6 @@ class Pyboard:
         data = self.read_until(1, b">")
         if not data.endswith(b">"):
             raise PyboardError("could not enter raw repl")
-
         if self.use_raw_paste:
             # Try to enter raw-paste mode.
             self.serial.write(b"\x05A\x01")
@@ -420,7 +444,6 @@ class Pyboard:
                 # Device doesn't support raw-paste, fall back to normal raw REPL.
                 data = self.read_until(1, b"w REPL; CTRL-B to exit\r\n>")
                 if not data.endswith(b"w REPL; CTRL-B to exit\r\n>"):
-                    print(data)
                     raise PyboardError("could not enter raw repl")
             # Don't try to use raw-paste mode again for this connection.
             self.use_raw_paste = False
@@ -454,6 +477,7 @@ class Pyboard:
     def execfile(self, filename):
         with open(filename, "rb") as f:
             pyfile = f.read()
+
         return self.exec_(pyfile)
 
     def get_time(self):
@@ -527,6 +551,7 @@ def execfile(filename, device="/dev/ttyACM0", baudrate=115200, user="micro", pas
     output = pyb.execfile(filename)
     stdout_write_bytes(output)
     pyb.exit_raw_repl()
+    pyb.exit_python_mode()
     pyb.close()
 
 
@@ -651,11 +676,7 @@ def main():
         help="Do not follow the output after running the scripts.",
     )
     cmd_parser.add_argument(
-        "-f",
-        "--filesystem",
-        action="store_true",
-        help="perform a filesystem action: "
-        "cp local :device | cp :device local | cat path | ls [path] | rm path | mkdir path | rmdir path",
+        "-f", "--filesystem", action="store_true", help="perform a filesystem action"
     )
     cmd_parser.add_argument("files", nargs="*", help="input files")
     args = cmd_parser.parse_args()

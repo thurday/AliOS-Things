@@ -6,11 +6,11 @@
 #include "py/obj.h"
 #include "py/runtime.h"
 #include "py/builtin.h"
-#include "k_api.h"
-#include "HaasLog.h"
+
+#include "ulog/ulog.h"
 #include "MQTTClient.h"
 
-
+#define LOG_TAG "MQTT_CLIENT"
 
 
 #define REQ_BUF_SIZE 2048
@@ -60,14 +60,14 @@ void messageArrived(MessageData* md)
 
 void mqtt_client_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
     mqtt_client_obj_t *self = MP_OBJ_TO_PTR(self_in);
     mp_printf(print, "ModuleName(%s)", self->ModuleName);
 }
 
 STATIC mp_obj_t mqtt_client_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args)
 {
-    LOG_E("entern  %s,n_args is %d  ;\r\n", __func__,n_args);
+    LOGE(LOG_TAG, "entern  %s,n_args is %d  ;\r\n", __func__,n_args);
     char clientId[150] = {0};
 	char username[65] = {0};
 	char password[65] = {0};
@@ -89,7 +89,7 @@ STATIC mp_obj_t mqtt_client_new(const mp_obj_type_t *type, size_t n_args, size_t
 
     if (n_args >= 1){
         char *cus_client_id = (char *)mp_obj_str_get_str(args[0]) ;
-        LOG_D("custom client id is %s \r\n",cus_client_id);
+        LOGD(LOG_TAG, "custom client id is %s \r\n",cus_client_id);
         data.clientID.cstring = cus_client_id;
     }
     else
@@ -109,21 +109,21 @@ STATIC mp_obj_t mqtt_client_new(const mp_obj_type_t *type, size_t n_args, size_t
 
 STATIC mp_obj_t mqtt_connect(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("enter  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "enter  %s; n_args = %d;\n", __func__, n_args);
     int rc = -1;
     void* instance = NULL;
 
 
     if (n_args < 4)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mqtt_client_obj_t* mqtt_client_obj = (mqtt_client_obj_t *)self;
     if (mqtt_client_obj == NULL)
     {
-        LOG_E("mqtt_client_obj  is NULL\n");
+        LOGE(LOG_TAG, "mqtt_client_obj  is NULL\n");
         return mp_const_none;
     }
 
@@ -170,19 +170,19 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(mqtt_client_connect, 4, mqtt_connect);
 
 STATIC mp_obj_t mqtt_subscribe(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("enter  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "enter  %s; n_args = %d;\n", __func__, n_args);
     int rc = -1;
     void* instance = NULL;
     if (n_args < 3)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mqtt_client_obj_t* mqtt_client_obj = (mqtt_client_obj_t *)self;
     if (mqtt_client_obj == NULL)
     {
-        LOG_E("mqtt_client_obj  is NULL\n");
+        LOGE(LOG_TAG, "mqtt_client_obj  is NULL\n");
         return mp_const_none;
 
     }
@@ -197,26 +197,26 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(mqtt_client_subscribe, 3, mqtt_subscribe);
 
 STATIC mp_obj_t mqtt_username_pw_set(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("enter  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "enter  %s; n_args = %d;\n", __func__, n_args);
     int rc = -1;
 
     if (n_args < 3)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mqtt_client_obj_t* mqtt_client_obj = (mqtt_client_obj_t *)self;
     if (mqtt_client_obj == NULL)
     {
-        LOG_E("mqtt_client_obj  is NULL\n");
+        LOGE(LOG_TAG, "mqtt_client_obj  is NULL\n");
         return mp_const_none;
     }
     char *username = (char *)mp_obj_str_get_str(args[1]);
     char *pwd = (char *)mp_obj_str_get_str(args[2]);
     mqtt_client_obj->data.username.cstring = username ;
     mqtt_client_obj->data.password.cstring = pwd ;
-    LOG_D("username is %s , pwd is %s \r\n",username,pwd);
+    LOGD(LOG_TAG, "username is %s , pwd is %s \r\n",username,pwd);
     return mp_obj_new_int(0);
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(mqtt_client_username_pw_set, 3, mqtt_username_pw_set);
@@ -224,19 +224,19 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(mqtt_client_username_pw_set, 3, mqtt_username
 
 STATIC mp_obj_t mqtt_publish(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("enter  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "enter  %s; n_args = %d;\n", __func__, n_args);
     int rc = -1;
 
     if (n_args < 4)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mqtt_client_obj_t* mqtt_client_obj = (mqtt_client_obj_t *)self;
     if (mqtt_client_obj == NULL)
     {
-        LOG_E("mqtt_client_obj  is NULL\n");
+        LOGE(LOG_TAG, "mqtt_client_obj  is NULL\n");
         return mp_const_none;
     }
     char *topic = (char *)mp_obj_str_get_str(args[1]);
@@ -257,17 +257,17 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(mqtt_client_publish, 4, mqtt_publish);
 
 STATIC mp_obj_t mqtt_loop(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("enter  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "enter  %s; n_args = %d;\n", __func__, n_args);
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mqtt_client_obj_t* mqtt_client_obj = (mqtt_client_obj_t *)self;
     if (mqtt_client_obj == NULL)
     {
-        LOG_E("mqtt_client_obj  is NULL\n");
+        LOGE(LOG_TAG, "mqtt_client_obj  is NULL\n");
         return mp_const_none;
     }
     if (n_args < 2)
     {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
     int timeout = mp_obj_get_int(args[1]);
@@ -279,12 +279,12 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(mqtt_client_loop, 2, mqtt_loop);
 
 STATIC mp_obj_t mqtt_disconnect(size_t n_args, const mp_obj_t *args)
 {
-    LOG_D("enter  %s; n_args = %d;\n", __func__, n_args);
+    LOGD(LOG_TAG, "enter  %s; n_args = %d;\n", __func__, n_args);
     mp_obj_base_t *self = (mp_obj_base_t*)MP_OBJ_TO_PTR(args[0]);
     mqtt_client_obj_t* mqtt_client_obj = (mqtt_client_obj_t *)self;
     if (mqtt_client_obj == NULL)
     {
-        LOG_E("mqtt_client_obj  is NULL\n");
+        LOGE(LOG_TAG, "mqtt_client_obj  is NULL\n");
         return mp_const_none;
     }
     MQTTDisconnect(&mqtt_client_obj->c);

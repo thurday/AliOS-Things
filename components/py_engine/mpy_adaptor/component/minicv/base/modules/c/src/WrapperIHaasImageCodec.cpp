@@ -1,17 +1,19 @@
 #include "WrapperIHaasImageCodec.h"
 #include "IHaasImageCodec.h"
-#include "HaasLog.h"
+#include "ulog/ulog.h"
 #include "HaasErrno.h"
 #include "IHaasImageCodec.h"
 
+#define LOG_TAG "WRAPPER_IMAGECODEC"
+
 void* ImageCodecCreateInstance(CodecImageType_t type)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasImageCodec* mIHaasImageCodec =  IHaasImageCodecInstance(type);
     if (mIHaasImageCodec == NULL)
     {
-        LOG_D("IHaasInstance failed %s;\n", __func__);
+        LOGD(LOG_TAG, "IHaasInstance failed %s;\n", __func__);
         return NULL;
     }
     return (void*)mIHaasImageCodec;
@@ -22,12 +24,12 @@ void* ImageCodecCreateInstance(CodecImageType_t type)
 
 void ImageCodecDestoryInstance(void* instance)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasImageCodec* mIHaasImageCodec = (IHaasImageCodec*)instance;
     if (mIHaasImageCodec == NULL)
     {
-        LOG_D("mIHaasImageCodec is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasImageCodec is NULL %s;\n", __func__);
         return;
     }
     delete mIHaasImageCodec;
@@ -36,12 +38,12 @@ void ImageCodecDestoryInstance(void* instance)
 
 int ImageCodecImgRead(void* instance, ImageBuffer_t **image, char * filename)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasImageCodec* mIHaasImageCodec = (IHaasImageCodec*)instance;
     if (mIHaasImageCodec == NULL)
     {
-        LOG_D("mIHaasImageCodec is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasImageCodec is NULL %s;\n", __func__);
         return -1;
     }
     int ret = mIHaasImageCodec->ImgRead(image, filename);
@@ -53,12 +55,12 @@ int ImageCodecImgRead(void* instance, ImageBuffer_t **image, char * filename)
 
 int ImageCodecImgReadMulti(void* instance, ImageBuffer_t **images, char * filename)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasImageCodec* mIHaasImageCodec = (IHaasImageCodec*)instance;
     if (mIHaasImageCodec == NULL)
     {
-        LOG_D("mIHaasImageCodec is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasImageCodec is NULL %s;\n", __func__);
         return -1;
     }
     int ret = mIHaasImageCodec->ImgReadMulti(images, filename);
@@ -70,12 +72,12 @@ int ImageCodecImgReadMulti(void* instance, ImageBuffer_t **images, char * filena
 
 int ImageCodecImgWrite(void* instance, ImageBuffer_t *image, char * filename)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasImageCodec* mIHaasImageCodec = (IHaasImageCodec*)instance;
     if (mIHaasImageCodec == NULL)
     {
-        LOG_D("mIHaasImageCodec is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasImageCodec is NULL %s;\n", __func__);
         return -1;
     }
     int ret = mIHaasImageCodec->ImgWrite(image, filename);
@@ -87,12 +89,12 @@ int ImageCodecImgWrite(void* instance, ImageBuffer_t *image, char * filename)
 
 int ImageCodecImgWriteMulti(void* instance, ImageBuffer_t **images, char * filename)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasImageCodec* mIHaasImageCodec = (IHaasImageCodec*)instance;
     if (mIHaasImageCodec == NULL)
     {
-        LOG_D("mIHaasImageCodec is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasImageCodec is NULL %s;\n", __func__);
         return -1;
     }
     int ret = mIHaasImageCodec->ImgWriteMulti(images, filename);
@@ -104,12 +106,12 @@ int ImageCodecImgWriteMulti(void* instance, ImageBuffer_t **images, char * filen
 
 int ImageCodecImgDecode(void* instance, void *addr, ImageBuffer_t **image)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasImageCodec* mIHaasImageCodec = (IHaasImageCodec*)instance;
     if (mIHaasImageCodec == NULL)
     {
-        LOG_D("mIHaasImageCodec is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasImageCodec is NULL %s;\n", __func__);
         return -1;
     }
     int ret = mIHaasImageCodec->ImgDecode(addr, image);
@@ -121,12 +123,12 @@ int ImageCodecImgDecode(void* instance, void *addr, ImageBuffer_t **image)
 
 ImageBuffer_t * ImageCodecImgDecode2(void* instance, const char * filename)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasImageCodec* mIHaasImageCodec = (IHaasImageCodec*)instance;
     if (mIHaasImageCodec == NULL)
     {
-        LOG_D("mIHaasImageCodec is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasImageCodec is NULL %s;\n", __func__);
         return NULL;
     }
     ImageBuffer_t * buffer = mIHaasImageCodec->ImgDecode(filename);
@@ -138,12 +140,12 @@ ImageBuffer_t * ImageCodecImgDecode2(void* instance, const char * filename)
 
 int ImageCodecImgEncode(void* instance, void *addr, ImageBuffer_t ** image)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasImageCodec* mIHaasImageCodec = (IHaasImageCodec*)instance;
     if (mIHaasImageCodec == NULL)
     {
-        LOG_D("mIHaasImageCodec is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasImageCodec is NULL %s;\n", __func__);
         return -1;
     }
     int ret = mIHaasImageCodec->ImgEncode(addr, image);
@@ -155,12 +157,12 @@ int ImageCodecImgEncode(void* instance, void *addr, ImageBuffer_t ** image)
 
 int ImageCodechaveImageReader(void* instance, char * filename)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasImageCodec* mIHaasImageCodec = (IHaasImageCodec*)instance;
     if (mIHaasImageCodec == NULL)
     {
-        LOG_D("mIHaasImageCodec is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasImageCodec is NULL %s;\n", __func__);
         return -1;
     }
     int ret = mIHaasImageCodec->haveImageReader(filename);
@@ -172,12 +174,12 @@ int ImageCodechaveImageReader(void* instance, char * filename)
 
 int ImageCodechaveImageWriter(void* instance, char * filename)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasImageCodec* mIHaasImageCodec = (IHaasImageCodec*)instance;
     if (mIHaasImageCodec == NULL)
     {
-        LOG_D("mIHaasImageCodec is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasImageCodec is NULL %s;\n", __func__);
         return -1;
     }
     int ret = mIHaasImageCodec->haveImageWriter(filename);

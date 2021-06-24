@@ -10,6 +10,8 @@
 
 import math
 import http
+import json
+import time
 from audio import Player,Snd
 
 toneDir = "/sdcard/resource/"
@@ -19,6 +21,11 @@ tonenameNumb1 = "SYS_TONE_yao"
 tonenameDot = "SYS_TONE_dian"
 tonenameUnit = ["SYS_TONE_MEASURE_WORD_ge", "SYS_TONE_MEASURE_WORD_shi", "SYS_TONE_MEASURE_WORD_bai", "SYS_TONE_MEASURE_WORD_qian"]
 tonenameHunit = ["SYS_TONE_MEASURE_WORD_wan", "SYS_TONE_MEASURE_WORD_yi", "SYS_TONE_MEASURE_WORD_sw", "SYS_TONE_MEASURE_WORD_bw", "SYS_TONE_MEASURE_WORD_qw"]
+
+on_callback = False
+on_download = False
+cb_data = None
+
 
 player = None
 def init_audio():
@@ -169,12 +176,36 @@ def add_amount(num_str, toneList, formatFlag):
 
 def download_resource_file(on_request,resDir):
     global toneDir
+    global on_callback
+    global on_download
+    global cb_data
     toneDir = resDir
-    client=http.client()
-    client.set_header("Accept: */*\r\n")
-    client.get(on_request['url'])
-    response = json.loads(client.get_response())
-    #print(response)
+
+    data = {
+        'url':on_request['url'],
+        'method': 'GET',
+        'headers': {
+            'Accept':'*/*'
+        },
+        'timeout': 30000,
+        'params' : ''
+    }
+    def cb(data):
+        global on_callback
+        global cb_data
+        print(on_callback)
+        on_callback = True
+        cb_data = data
+
+    http.request(data,cb)
+
+    while True:
+        if  on_callback:
+            break
+        else:
+            time.sleep(1)
+
+    response = json.loads(cb_data)
     format = response['format']
     size = response['size']
     format = response['format']
@@ -182,8 +213,21 @@ def download_resource_file(on_request,resDir):
     id = audio['id']
     path = toneDir +id+'.'+format
     print('************ begin to download: ' + path)
-    ret  = client.download(audio['url'],path)
-    if ret == 0 :
-        print('************ download: ' + path + ' succeed')
-    else:
-        print('************ download: ' + path + ' failed')
+    d_data = {
+        'url': audio['url'],
+        'filepath': path
+    }
+
+    def d_cb(data):
+        global on_download
+        on_download = True
+    http.download(d_data,d_cb)
+
+    while True:
+        if not on_download:
+            break
+        else:
+            time.sleep(1)
+    print('download succeed :' + path)
+
+

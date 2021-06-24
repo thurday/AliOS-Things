@@ -31,7 +31,7 @@
 
 #if MICROPY_PY_FRAMEBUF
 
-// #include "ports/stm32/font_petme128_8x8.h"
+#include "./font_petme128_8x8.h"
 
 typedef struct _mp_obj_framebuf_t {
     mp_obj_base_t base;
@@ -557,43 +557,43 @@ STATIC mp_obj_t framebuf_scroll(mp_obj_t self_in, mp_obj_t xstep_in, mp_obj_t ys
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_3(framebuf_scroll_obj, framebuf_scroll);
 
-// STATIC mp_obj_t framebuf_text(size_t n_args, const mp_obj_t *args) {
-//     // extract arguments
-//     mp_obj_framebuf_t *self = MP_OBJ_TO_PTR(args[0]);
-//     const char *str = mp_obj_str_get_str(args[1]);
-//     mp_int_t x0 = mp_obj_get_int(args[2]);
-//     mp_int_t y0 = mp_obj_get_int(args[3]);
-//     mp_int_t col = 1;
-//     if (n_args >= 5) {
-//         col = mp_obj_get_int(args[4]);
-//     }
+STATIC mp_obj_t framebuf_text(size_t n_args, const mp_obj_t *args) {
+    // extract arguments
+    mp_obj_framebuf_t *self = MP_OBJ_TO_PTR(args[0]);
+    const char *str = mp_obj_str_get_str(args[1]);
+    mp_int_t x0 = mp_obj_get_int(args[2]);
+    mp_int_t y0 = mp_obj_get_int(args[3]);
+    mp_int_t col = 1;
+    if (n_args >= 5) {
+        col = mp_obj_get_int(args[4]);
+    }
 
-//     // loop over chars
-//     for (; *str; ++str) {
-//         // get char and make sure its in range of font
-//         int chr = *(uint8_t*)str;
-//         if (chr < 32 || chr > 127) {
-//             chr = 127;
-//         }
-//         // get char data
-//         const uint8_t *chr_data = &font_petme128_8x8[(chr - 32) * 8];
-//         // loop over char data
-//         for (int j = 0; j < 8; j++, x0++) {
-//             if (0 <= x0 && x0 < self->width) { // clip x
-//                 uint vline_data = chr_data[j]; // each byte is a column of 8 pixels, LSB at top
-//                 for (int y = y0; vline_data; vline_data >>= 1, y++) { // scan over vertical column
-//                     if (vline_data & 1) { // only draw if pixel set
-//                         if (0 <= y && y < self->height) { // clip y
-//                             setpixel(self, x0, y, col);
-//                         }
-//                     }
-//                 }
-//             }
-//         }
-//     }
-//     return mp_const_none;
-// }
-// STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(framebuf_text_obj, 4, 5, framebuf_text);
+    // loop over chars
+    for (; *str; ++str) {
+        // get char and make sure its in range of font
+        int chr = *(uint8_t*)str;
+        if (chr < 32 || chr > 127) {
+            chr = 127;
+        }
+        // get char data
+        const uint8_t *chr_data = &font_petme128_8x8[(chr - 32) * 8];
+        // loop over char data
+        for (int j = 0; j < 8; j++, x0++) {
+            if (0 <= x0 && x0 < self->width) { // clip x
+                uint vline_data = chr_data[j]; // each byte is a column of 8 pixels, LSB at top
+                for (int y = y0; vline_data; vline_data >>= 1, y++) { // scan over vertical column
+                    if (vline_data & 1) { // only draw if pixel set
+                        if (0 <= y && y < self->height) { // clip y
+                            setpixel(self, x0, y, col);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(framebuf_text_obj, 4, 5, framebuf_text);
 
 // #if !MICROPY_ENABLE_DYNRUNTIME
 STATIC const mp_rom_map_elem_t framebuf_locals_dict_table[] = {
@@ -606,7 +606,7 @@ STATIC const mp_rom_map_elem_t framebuf_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_line), MP_ROM_PTR(&framebuf_line_obj) },
     { MP_ROM_QSTR(MP_QSTR_blit), MP_ROM_PTR(&framebuf_blit_obj) },
     { MP_ROM_QSTR(MP_QSTR_scroll), MP_ROM_PTR(&framebuf_scroll_obj) },
-    // { MP_ROM_QSTR(MP_QSTR_text), MP_ROM_PTR(&framebuf_text_obj) },
+    { MP_ROM_QSTR(MP_QSTR_text), MP_ROM_PTR(&framebuf_text_obj) },
 };
 STATIC MP_DEFINE_CONST_DICT(framebuf_locals_dict, framebuf_locals_dict_table);
 

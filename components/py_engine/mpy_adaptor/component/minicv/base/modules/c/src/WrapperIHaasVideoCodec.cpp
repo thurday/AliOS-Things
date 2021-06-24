@@ -1,18 +1,20 @@
 
 #include "WrapperIHaasVideoCodec.h"
 #include "IHaasVideoCodec.h"
-#include "HaasLog.h"
+#include "ulog/ulog.h"
 #include "HaasErrno.h"
 #include "IHaasVideoCodec.h"
 
+#define LOG_TAG "WRAPPER_VIDEOCODEC"
+
 void* VideoCodecCreateInstance(VideoCodecType_t type)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasVideoCodec* mIHaasVideoCodec =  IHaasVideoCodecInstance(type);
     if (mIHaasVideoCodec == NULL)
     {
-        LOG_D("IHaasInstance failed %s;\n", __func__);
+        LOGD(LOG_TAG, "IHaasInstance failed %s;\n", __func__);
         return NULL;
     }
     return (void*)mIHaasVideoCodec;
@@ -23,12 +25,12 @@ void* VideoCodecCreateInstance(VideoCodecType_t type)
 
 void VideoCodecDestoryInstance(void* instance)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasVideoCodec* mIHaasVideoCodec = (IHaasVideoCodec*)instance;
     if (mIHaasVideoCodec == NULL)
     {
-        LOG_D("mIHaasVideoCodec is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasVideoCodec is NULL %s;\n", __func__);
         return;
     }
     delete mIHaasVideoCodec;
@@ -37,12 +39,12 @@ void VideoCodecDestoryInstance(void* instance)
 
 int VideoCodecOpen(void* instance)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasVideoCodec* mIHaasVideoCodec = (IHaasVideoCodec*)instance;
     if (mIHaasVideoCodec == NULL)
     {
-        LOG_D("mIHaasVideoCodec is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasVideoCodec is NULL %s;\n", __func__);
         return -1;
     }
     int ret = mIHaasVideoCodec->Open();
@@ -54,12 +56,12 @@ int VideoCodecOpen(void* instance)
 
 int VideoCodecClose(void* instance)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasVideoCodec* mIHaasVideoCodec = (IHaasVideoCodec*)instance;
     if (mIHaasVideoCodec == NULL)
     {
-        LOG_D("mIHaasVideoCodec is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasVideoCodec is NULL %s;\n", __func__);
         return -1;
     }
     int ret = mIHaasVideoCodec->Close();
@@ -71,12 +73,12 @@ int VideoCodecClose(void* instance)
 
 int VideoCodecDecodeConfig(void* instance, DecodeConfig_t* config)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasVideoCodec* mIHaasVideoCodec = (IHaasVideoCodec*)instance;
     if (mIHaasVideoCodec == NULL)
     {
-        LOG_D("mIHaasVideoCodec is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasVideoCodec is NULL %s;\n", __func__);
         return -1;
     }
     int ret = mIHaasVideoCodec->DecodeConfig(config);
@@ -88,12 +90,12 @@ int VideoCodecDecodeConfig(void* instance, DecodeConfig_t* config)
 
 int VideoCodecStartDecode(void* instance)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasVideoCodec* mIHaasVideoCodec = (IHaasVideoCodec*)instance;
     if (mIHaasVideoCodec == NULL)
     {
-        LOG_D("mIHaasVideoCodec is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasVideoCodec is NULL %s;\n", __func__);
         return -1;
     }
     int ret = mIHaasVideoCodec->StartDecode();
@@ -105,12 +107,12 @@ int VideoCodecStartDecode(void* instance)
 
 int VideoCodecStopDecode(void* instance)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasVideoCodec* mIHaasVideoCodec = (IHaasVideoCodec*)instance;
     if (mIHaasVideoCodec == NULL)
     {
-        LOG_D("mIHaasVideoCodec is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasVideoCodec is NULL %s;\n", __func__);
         return -1;
     }
     int ret = mIHaasVideoCodec->StopDecode();
@@ -122,12 +124,12 @@ int VideoCodecStopDecode(void* instance)
 
 int VideoCodecGetDecodeImageData(void* instance, void *pkt, ImageBuffer_t** image)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasVideoCodec* mIHaasVideoCodec = (IHaasVideoCodec*)instance;
     if (mIHaasVideoCodec == NULL)
     {
-        LOG_D("mIHaasVideoCodec is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasVideoCodec is NULL %s;\n", __func__);
         return -1;
     }
     int ret = mIHaasVideoCodec->GetDecodeImageData(pkt, image);
@@ -139,12 +141,12 @@ int VideoCodecGetDecodeImageData(void* instance, void *pkt, ImageBuffer_t** imag
 
 int VideoCodecEncodeConfig(void* instance, EncodeConfig_t* config)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasVideoCodec* mIHaasVideoCodec = (IHaasVideoCodec*)instance;
     if (mIHaasVideoCodec == NULL)
     {
-        LOG_D("mIHaasVideoCodec is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasVideoCodec is NULL %s;\n", __func__);
         return -1;
     }
     int ret = mIHaasVideoCodec->EncodeConfig(config);
@@ -156,12 +158,12 @@ int VideoCodecEncodeConfig(void* instance, EncodeConfig_t* config)
 
 int VideoCodecStartEncode(void* instance)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasVideoCodec* mIHaasVideoCodec = (IHaasVideoCodec*)instance;
     if (mIHaasVideoCodec == NULL)
     {
-        LOG_D("mIHaasVideoCodec is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasVideoCodec is NULL %s;\n", __func__);
         return -1;
     }
     int ret = mIHaasVideoCodec->StartEncode();
@@ -173,12 +175,12 @@ int VideoCodecStartEncode(void* instance)
 
 int VideoCodecStopEncode(void* instance)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasVideoCodec* mIHaasVideoCodec = (IHaasVideoCodec*)instance;
     if (mIHaasVideoCodec == NULL)
     {
-        LOG_D("mIHaasVideoCodec is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasVideoCodec is NULL %s;\n", __func__);
         return -1;
     }
     int ret = mIHaasVideoCodec->StopEncode();
@@ -190,12 +192,12 @@ int VideoCodecStopEncode(void* instance)
 
 int VideoCodecGetEncodePacketData(void* instance, VideoPacket_t **data)
 {
-    LOG_D("entern %s;\n", __func__);
+    LOGD(LOG_TAG, "entern %s;\n", __func__);
 #if 0
     IHaasVideoCodec* mIHaasVideoCodec = (IHaasVideoCodec*)instance;
     if (mIHaasVideoCodec == NULL)
     {
-        LOG_D("mIHaasVideoCodec is NULL %s;\n", __func__);
+        LOGD(LOG_TAG, "mIHaasVideoCodec is NULL %s;\n", __func__);
         return -1;
     }
     int ret = mIHaasVideoCodec->GetEncodePacketData(data);

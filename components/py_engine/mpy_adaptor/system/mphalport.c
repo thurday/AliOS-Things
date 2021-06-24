@@ -33,7 +33,7 @@ int mp_hal_stdin_rx_chr(void) {
     uart_stdio.port = 0;
 
     // try to check whether we have receive uart input
-    ret = hal_uart_recv_II(&uart_stdio, &c, 1, &recv_size, 0);
+    ret = hal_uart_recv_II(&uart_stdio, &c, 1, &recv_size, 200);
     if (ret == 0 && recv_size == 1) {
         return c;
     }
@@ -42,6 +42,7 @@ int mp_hal_stdin_rx_chr(void) {
 
     // wait till we get any uart input or wakeup
     ret = hal_uart_rx_sem_take(uart_stdio.port, HAL_WAIT_FOREVER);
+	return (-MP_EAGAIN);
 }
 
 // Send string of given length

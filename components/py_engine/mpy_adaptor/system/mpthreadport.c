@@ -32,24 +32,29 @@
 #include "py/gc.h"
 #include "py/mpthread.h"
 #include "mpthreadport.h"
+#include "mpsalport.h"
 
-#include "k_api.h"
 #include "aos/kernel.h"
+#include "mphalport.h"
+#include "mperrno.h"
 
 #if MICROPY_PY_THREAD
 
-#define MP_THREAD_MIN_STACK_SIZE                        (1024 + 256) //(4 * 1024)
-#define MP_THREAD_DEFAULT_STACK_SIZE                    (MP_THREAD_MIN_STACK_SIZE + 1024)
-#define MP_THREAD_PRIORITY                              (AOS_DEFAULT_APP_PRI)
+#define LOG_TAG "MP_THREAD"
+
+#define MP_THREAD_MIN_STACK_SIZE            MP_SAL_THREAD_MIN_STACK_SIZE
+#define MP_THREAD_DEFAULT_STACK_SIZE        MP_SAL_THREAD_DEFAULT_STACK_SIZE
+#define MP_THREAD_PRIORITY                  MP_SAL_THREAD_PRIORITY
 
 // this structure forms a linked list, one node per active thread
 typedef struct _thread_t {
-    ktask_t * id;        // system id of thread
+    aos_task_t handler;     // task handler of thread
     int ready;              // whether the thread is ready and running
     void *arg;              // thread Python args, a GC root pointer
-    void *stack;            // pointer to the stack
-    size_t stack_len;       // number of words in the stack
+    void *stack_addr;       // pointer to the stack
+    size_t stack_len;       // number of bytes in the stack
     struct _thread_t *next;
+    mp_state_thread_t *state; //state
 } thread_t;
 
 // the mutex controls access to the linked list
@@ -57,17 +62,18 @@ STATIC mp_thread_mutex_t thread_mutex;
 STATIC thread_t thread_entry0;
 STATIC thread_t *thread = NULL; // root pointer, handled by mp_thread_gc_others
 
-void mp_thread_init(void *stack, uint32_t stack_len) {
-    mp_thread_set_state(&mp_state_ctx.thread);
+void mp_thread_init(void *stack_addr, uint32_t stack_len) {
+    mp_thread_mutex_init(&thread_mutex);
     // create the first entry in the linked list of all threads
     thread = &thread_entry0;
-    thread->id = krhino_cur_task_get();
+    thread->handler = aos_task_self();
     thread->ready = 1;
     thread->arg = NULL;
-    thread->stack = stack;
+    thread->stack_addr = stack_addr;
     thread->stack_len = stack_len;
     thread->next = NULL;
-    mp_thread_mutex_init(&thread_mutex);
+    thread->state = NULL;
+    mp_thread_set_state(&mp_state_ctx.thread);
 }
 
 void mp_thread_gc_others(void) {
@@ -75,41 +81,55 @@ void mp_thread_gc_others(void) {
     for (thread_t *th = thread; th != NULL; th = th->next) {
         gc_collect_root((void **)&th, 1);
         gc_collect_root(&th->arg, 1);
-        // gc_collect_root(&th->stack, 1);
-        if (th->id == krhino_cur_task_get()) {
+        if (th->handler == aos_task_self()) {
             continue;
         }
         if (!th->ready) {
             continue;
         }
-        gc_collect_root(th->stack, th->stack_len);
+        gc_collect_root(th->stack_addr, th->stack_len);
     }
     mp_thread_mutex_unlock(&thread_mutex);
 }
 
 mp_state_thread_t *mp_thread_get_state(void) {
-    void *vp = NULL;
-    krhino_task_info_get(krhino_cur_task_get(), 1, &vp);
-    return vp;
+    mp_state_thread_t *state = NULL;
+
+    mp_thread_mutex_lock(&thread_mutex, 1);
+    for (thread_t *th = thread; th != NULL; th = th->next) {
+        if (th->handler == aos_task_self()) {
+            state = th->state;
+            break;
+        }
+    }
+    mp_thread_mutex_unlock(&thread_mutex);
+    return state;
 }
 
 void mp_thread_set_state(mp_state_thread_t *state) {
-    krhino_task_info_set(krhino_cur_task_get(), 1, state);
+    mp_thread_mutex_lock(&thread_mutex, 1);
+    for (thread_t *th = thread; th != NULL; th = th->next) {
+        if (th->handler == aos_task_self()) {
+            th->state = state;
+            break;
+        }
+    }
+    mp_thread_mutex_unlock(&thread_mutex);
 }
 
 void mp_thread_start(void) {
     mp_thread_mutex_lock(&thread_mutex, 1);
     for (thread_t *th = thread; th != NULL; th = th->next) {
-        if (th->id == krhino_cur_task_get()) {
+        if (th->handler == aos_task_self()) {
             th->ready = 1;
             break;
-            
         }
     }
     mp_thread_mutex_unlock(&thread_mutex);
 }
 
 void mp_thread_create_ex(void (*entry)(void*), void *arg, size_t *stack_size, int priority, char *name) {
+
     if (*stack_size == 0) {
         *stack_size = MP_THREAD_DEFAULT_STACK_SIZE; // default stack size
     } else if (*stack_size < MP_THREAD_MIN_STACK_SIZE) {
@@ -121,19 +141,15 @@ void mp_thread_create_ex(void (*entry)(void*), void *arg, size_t *stack_size, in
     if (th == NULL) {
         nlr_raise(mp_obj_new_exception_msg(&mp_type_OSError, "thread_t alloc fail"));
     }
-    th->id = m_new_obj(ktask_t);
-    if (th->id == NULL) {
-        nlr_raise(mp_obj_new_exception_msg(&mp_type_OSError, "ktask_t alloc fail"));
-    }
-    th->stack = m_new(uint8_t, *stack_size);
-    if (th->stack == NULL) {
+
+    // Allocate stack buffer
+    void *stack_addr = m_new(uint8_t, *stack_size);
+    if (stack_addr == NULL) {
         nlr_raise(mp_obj_new_exception_msg(&mp_type_OSError, "stack alloc fail"));
     }
 
     mp_thread_mutex_lock(&thread_mutex, 1);
-
-    // create thread
-    int result = krhino_task_create(th->id, name, arg, priority, 0, th->stack, (*stack_size) / sizeof(cpu_stack_t), entry, 1u);
+    int32_t result = aos_task_create(&th->handler, name, entry, arg, stack_addr, *stack_size, priority, AOS_TASK_AUTORUN);
     if (result != 0) {
         mp_thread_mutex_unlock(&thread_mutex);
         nlr_raise(mp_obj_new_exception_msg(&mp_type_OSError, "can't create thread"));
@@ -145,7 +161,7 @@ void mp_thread_create_ex(void (*entry)(void*), void *arg, size_t *stack_size, in
     // add thread to linked list of all threads
     th->ready = 0;
     th->arg = arg;
-    //th->stack = th->stack;
+    th->stack_addr = stack_addr;
     th->stack_len = (*stack_size) / sizeof(cpu_stack_t);
     th->next = thread;
     thread = th;
@@ -160,7 +176,7 @@ void mp_thread_create(void *(*entry)(void*), void *arg, size_t *stack_size) {
 void mp_thread_finish(void) {
     mp_thread_mutex_lock(&thread_mutex, 1);
     for (thread_t *th = thread; th != NULL; th = th->next) {
-        if (th->id == krhino_cur_task_get()) {
+        if (th->handler == aos_task_self()) {
             th->ready = 0;
             break;
         }
@@ -168,69 +184,53 @@ void mp_thread_finish(void) {
     mp_thread_mutex_unlock(&thread_mutex);
 }
 
-void vPortCleanUpTCB(void *tcb) {
-    if (thread == NULL) {
-        // threading not yet initialised
-        return;
-    }
-    thread_t *prev = NULL;
-    mp_thread_mutex_lock(&thread_mutex, 1);
-    for (thread_t *th = thread; th != NULL; prev = th, th = th->next) {
-        // unlink the node from the list
-        if ((void*)th->id == tcb) {
-            if (prev != NULL) {
-                prev->next = th->next;
-            } else {
-                // move the start pointer
-                thread = th->next;
-            }
-            // explicitly release all its memory
-            m_del(thread_t, th, 1);
-            break;
-        }
-    }
-    mp_thread_mutex_unlock(&thread_mutex);
-}
-
 void mp_thread_mutex_init(mp_thread_mutex_t *mutex) {
-    krhino_mutex_create(&(mutex->k_mutex), "mpy_aos");
+    mp_sal_mutex_create(&(mutex->k_mutex));
 }
 
 int mp_thread_mutex_lock(mp_thread_mutex_t *mutex, int wait) {
-    return krhino_mutex_lock(&(mutex->k_mutex), wait ? RHINO_WAIT_FOREVER : 0);
+    if((mutex->k_mutex) == NULL) {
+        LOGE(LOG_TAG, "mpthread mutex lock error!!");
+        return -MP_EINVAL;
+    }
+    return mp_sal_mutex_lock(&(mutex->k_mutex), wait ? AOS_WAIT_FOREVER : 0);
 }
 
 void mp_thread_mutex_unlock(mp_thread_mutex_t *mutex) {
-    krhino_mutex_unlock(&(mutex->k_mutex));
+    if((mutex->k_mutex) == NULL) {
+        LOGE(LOG_TAG, "mpthread mutex unlock error!!");
+        return;
+    }
+    mp_sal_mutex_unlock(&(mutex->k_mutex));
 }
 
 void mp_thread_deinit(void) {
     for (;;) {
         // Find a task to delete
-        ktask_t * id = NULL;
+        aos_task_t handler = NULL;
         mp_thread_mutex_lock(&thread_mutex, 1);
         for (thread_t *th = thread; th != NULL; th = th->next) {
             // Don't delete the current task
-            if (th->id != krhino_cur_task_get()) {
-                id = th->id;
+            if (th->handler != aos_task_self()) {
+                handler = th->handler;
                 break;
             }
         }
         mp_thread_mutex_unlock(&thread_mutex);
 
-        if (id == NULL) {
+        if (handler == NULL) {
             // No tasks left to delete
             break;
         } else {
-            // Call FreeRTOS to delete the task (it will call vPortCleanUpTCB)
-            krhino_task_del(id);
+            int32_t status = -1;
+            mp_sal_task_delete(handler, &status);
+            if(status != 0) {
+                LOGE(LOG_TAG, "Failed to delete task[id = 0x%X]");
+            }
         }
     }
 }
 
 #else
-
-void vPortCleanUpTCB(void *tcb) {
-}
 
 #endif // MICROPY_PY_THREAD

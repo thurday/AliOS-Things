@@ -31,15 +31,17 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "HaasLog.h"
-#include "k_api.h"
+#include "ulog/ulog.h"
+
 #include "py/builtin.h"
 #include "py/mperrno.h"
 #include "py/obj.h"
 #include "py/runtime.h"
 #include "py/gc.h"
 #include "py/stackctrl.h"
-#include "aos/hal/timer.h"
+#include "aos_hal_timer.h"
+
+#define LOG_TAG "DRIVER_TIMER"
 
 #define TIMER_MODE_ONE_SHOT (TIMER_RELOAD_MANU)
 #define TIMER_MODE_PERIODIC (TIMER_RELOAD_AUTO)
@@ -57,7 +59,7 @@ STATIC void driver_timer_disable(driver_timer_obj_t *self);
 
 STATIC timer_dev_t *driver_timer_get_devive(driver_timer_obj_t *self) {
     if (self == NULL) {
-        LOG_E("driver_timer_obj is NULL\n");
+        LOGE(LOG_TAG, "driver_timer_obj is NULL\n");
         return NULL;
     }
 
@@ -66,7 +68,7 @@ STATIC timer_dev_t *driver_timer_get_devive(driver_timer_obj_t *self) {
     } else {
         timer_dev_t *device = aos_calloc(1, sizeof(timer_dev_t));
         if (NULL == device) {
-            LOG_E("%s: timer_dev_t calloc failed;\n", __func__);
+            LOGE(LOG_TAG, "%s: timer_dev_t calloc failed;\n", __func__);
             goto fail;
         }
         device->port = self->port;
@@ -106,7 +108,7 @@ STATIC mp_obj_t driver_timer_make_new(const mp_obj_type_t *type, size_t n_args,
 
 STATIC void driver_timer_disable(driver_timer_obj_t *self) {
     timer_dev_t *tim = driver_timer_get_devive(self);
-    hal_timer_stop(tim);
+    aos_hal_timer_stop(tim);
 }
 
 STATIC void driver_timer_isr(void *self_in) {
@@ -120,8 +122,8 @@ STATIC void driver_timer_isr(void *self_in) {
 STATIC void driver_timer_enable(driver_timer_obj_t *self) {
     timer_dev_t *tim = driver_timer_get_devive(self);
     if(tim != NULL) {
-        hal_timer_init(tim);
-        hal_timer_start(tim);
+        aos_hal_timer_init(tim);
+        aos_hal_timer_start(tim);
     }
 }
 
@@ -150,7 +152,7 @@ STATIC mp_obj_t driver_timer_init_helper(driver_timer_obj_t *self,
                      allowed_args, args);
 
     if (self == NULL || self->device == NULL) {
-        LOG_E("%s: hal_timer_init failed \n", __func__);
+        LOGE(LOG_TAG, "%s: hal_timer_init failed \n", __func__);
         return mp_const_none;
     }
 
@@ -173,7 +175,7 @@ STATIC mp_obj_t driver_timer_deinit(mp_obj_t self_in) {
         aos_free(tim);
         self->device = NULL;
     }
-    hal_timer_stop(tim);
+    aos_hal_timer_stop(tim);
     return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(driver_timer_deinit_obj, driver_timer_deinit);
@@ -196,7 +198,7 @@ STATIC mp_obj_t driver_timer_period(mp_obj_t self_in, mp_const_obj_t period)
     timer_config_t para = self->device->config;
 
     timer_dev_t *tim = driver_timer_get_devive(self);
-    int32_t ret = hal_timer_para_chg(tim, para);
+    int32_t ret = aos_hal_timer_para_chg(tim, para);
     return MP_OBJ_NEW_SMALL_INT(ret);
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(driver_timer_period_obj, driver_timer_period);
@@ -204,7 +206,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_2(driver_timer_period_obj, driver_timer_period);
 STATIC mp_obj_t driver_timer_start(mp_obj_t self_in) {
     driver_timer_obj_t *self = self_in;
     timer_dev_t *tim = driver_timer_get_devive(self);
-    int32_t ret = hal_timer_start(tim);
+    int32_t ret = aos_hal_timer_start(tim);
     return MP_OBJ_NEW_SMALL_INT(ret);
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(driver_timer_start_obj, driver_timer_start);
@@ -212,7 +214,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(driver_timer_start_obj, driver_timer_start);
 STATIC mp_obj_t driver_timer_stop(mp_obj_t self_in) {
     driver_timer_obj_t *self = self_in;
     timer_dev_t *tim = driver_timer_get_devive(self);
-    hal_timer_stop(tim);
+    aos_hal_timer_stop(tim);
     return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(driver_timer_stop_obj, driver_timer_stop);

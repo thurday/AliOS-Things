@@ -28,10 +28,8 @@
 #ifndef MICROPY_INCLUDED_MPTHREADPORT_H
 #define MICROPY_INCLUDED_MPTHREADPORT_H
 
-#include "k_api.h"
-
 typedef struct _mp_thread_mutex_t {
-    kmutex_t k_mutex;
+    void* k_mutex;
 } mp_thread_mutex_t;
 
 void mp_thread_init(void *stack, uint32_t stack_len);

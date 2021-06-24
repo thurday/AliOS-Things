@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "HaasLog.h"
-#include "k_api.h"
+#include "ulog/ulog.h"
+
 #include "py/builtin.h"
 #include "py/mperrno.h"
 #include "py/obj.h"
@@ -11,6 +11,8 @@
 #include "uvoice_types.h"
 #include "uvoice_init.h"
 #include "uvoice_recorder.h"
+
+#define LOG_TAG "UVOICE_RECORDER"
 
 extern const mp_obj_type_t uvoice_recorder_type;
 extern bool g_is_uvoice_inited;
@@ -63,7 +65,7 @@ STATIC mp_obj_t uvoice_create(mp_obj_t self_in)
 {
     uvocie_recorder_obj_t *self = (uvocie_recorder_obj_t *)MP_OBJ_TO_PTR(self_in);
     if (self == NULL) {
-        LOG_E("uvocie_recorder_obj_t NULL");
+        LOGE(LOG_TAG, "uvocie_recorder_obj_t NULL");
         return mp_const_none;
     }
 
@@ -75,7 +77,7 @@ STATIC mp_obj_t uvoice_create(mp_obj_t self_in)
     if (self->recorder_obj == NULL) {
         self->recorder_obj = uvoice_recorder_create();
         if (self->recorder_obj == NULL) {
-            LOG_E("create media recorder failed !\n");
+            LOGE(LOG_TAG, "create media recorder failed !\n");
         }
     }
     return mp_const_none;
@@ -90,7 +92,7 @@ STATIC mp_obj_t uvoice_release(mp_obj_t self_in)
     if (self->recorder_obj != NULL) {
         status = uvoice_recorder_release(self->recorder_obj);
         if (status != 0) {
-            LOG_E("failed to release recorder!\n");
+            LOGE(LOG_TAG, "failed to release recorder!\n");
         } else {
             self->recorder_obj = NULL;
         }
@@ -102,7 +104,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(uvoice_release_obj, uvoice_release);
 STATIC mp_obj_t uvoice_set_sink(size_t n_args, const mp_obj_t *args)
 {
     if (n_args < 8) {
-        LOG_E("%s: args num is illegal :n_args = %d;\n", __func__, n_args);
+        LOGE(LOG_TAG, "%s: args num is illegal :n_args = %d;\n", __func__, n_args);
         return mp_const_none;
     }
 
@@ -117,7 +119,7 @@ STATIC mp_obj_t uvoice_set_sink(size_t n_args, const mp_obj_t *args)
     int bitrate = mp_obj_get_int(args[6]);
     char *sink = mp_obj_is_type(args[7], &mp_type_NoneType) ? NULL: (char *) mp_obj_str_get_str(args[7]);
 
-    LOG_D("format=%d, rate=%d, channels=%d, bits=%d, frames=%d, bitrate=%d, sink=%s\n",
+    LOGD(LOG_TAG, "format=%d, rate=%d, channels=%d, bits=%d, frames=%d, bitrate=%d, sink=%s\n",
           format, rate, channels, bits, frames, bitrate, sink);
 
     mp_int_t status = self->recorder_obj->set_sink(format, rate, channels, bits, frames, bitrate, sink);

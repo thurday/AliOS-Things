@@ -9,7 +9,9 @@
 #include "py/stackctrl.h"
 
 #include "mbmaster.h"
-#include "HaasLog.h"
+#include "ulog/ulog.h"
+
+#define LOG_TAG "MODBUS"
 
 static mb_handler_t *mb_handler = NULL;
 
@@ -85,9 +87,9 @@ STATIC mp_obj_t mp_modbus_write(size_t n_args, const mp_obj_t *args) {
     mb_status_t status = mbmaster_write_single_register(mb_handler, slave_addr, register_addr,
                                             register_value, NULL, &data_resp, NULL, timeout);
     if (status == MB_SUCCESS && register_value == data_resp) {
-        LOG_D("write single register ok");
+        LOGD(LOG_TAG, "write single register ok");
     } else {
-        LOG_E("write single register error");
+        LOGE(LOG_TAG, "write single register error");
     }
 
     return mp_obj_new_int(-status);
@@ -118,7 +120,7 @@ STATIC mp_obj_t mp_modbus_read(size_t n_args, const mp_obj_t *args) {
     mb_status_t status = mbmaster_read_holding_registers(mb_handler, slave_addr, start_addr,
                                              quantity, respond_buf, &respond_count, timeout);
     if (status != MB_SUCCESS) {
-        LOG_E("read holding register error, status = %d", status);
+        LOGE(LOG_TAG, "read holding register error, status = %d", status);
         return mp_obj_new_int(-status);
     } else {
         return mp_obj_new_int(respond_count);

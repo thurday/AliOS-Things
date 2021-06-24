@@ -11,7 +11,9 @@
 #include <uservice/uservice.h>
 #include <uservice/eventid.h>
 
-#include "HaasLog.h"
+#include "ulog/ulog.h"
+
+#define LOG_TAG "MOD_NETMGR"
 
 #include "amp_network.h"
 // #include "netmgr_wifi.h"
@@ -168,7 +170,7 @@ STATIC mp_obj_t connect_wifi(mp_obj_t ssid,mp_obj_t pwd) {
     netmgr_wifi_connect_params_t *params;
     params = (netmgr_wifi_connect_params_t*) malloc(sizeof(netmgr_wifi_connect_params_t));
     if(params == NULL) {
-        LOG_E("%s:%d malloc failed\n", __func__, __LINE__);
+        LOGE(LOG_TAG, "%s:%d malloc failed\n", __func__, __LINE__);
         return ;
     }
     memset(params, 0, sizeof(netmgr_wifi_connect_params_t));
