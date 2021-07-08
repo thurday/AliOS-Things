@@ -10,7 +10,6 @@
 
 #include "aos/kernel.h"
 #include "sys/socket.h"
-#include "hal_sal.h"
 #include <uservice/uservice.h>
 #include <uservice/eventid.h>
 #include "ulog/ulog.h"
